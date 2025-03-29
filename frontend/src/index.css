@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+@theme {
+    --color-dark: #1F1F1F;
+    --color-toolbar: #161616;
+    --color-border: #3C3C3C;
+    --color-button: #0D0D0D;
+}
+
+.material-symbols-outlined {
+    font-family: 'Material Symbols', sans-serif;
+    font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+  }
+  
