@@ -16,6 +16,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-konva": "^19.0.3",
+    "simplify-js": "^1.2.4",
     "tailwindcss": "^4.0.6",
     "y-websocket": "^2.1.0",
     "yjs": "^13.6.24"

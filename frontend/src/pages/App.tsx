@@ -1,6 +1,6 @@
 import { useRef, useState } from "react"
-import { Canvas, CanvasRef } from "../components/Canvas";
-import { Toolbar } from "../components/Toolbar";
+import { Canvas, CanvasRef } from "../features/canvas/Canvas";
+import { Toolbar } from "../features/canvas/components/Toolbar";
 
 function App() {
   const [name, setName] = useState<string>("");
@@ -40,7 +40,7 @@ function App() {
         </button>
       </div>
       <div className="flex flex-row h-screen justify-center align-middle items-center justify-items-center bg-dark">
-        <Canvas ref={canvasRef}/>
+        <Canvas ref={canvasRef} activeTool={"pen"}/>
       </div>
     </>
   )
