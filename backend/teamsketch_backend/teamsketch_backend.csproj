@@ -9,10 +9,14 @@
   <ItemGroup>
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
     <PackageReference Include="YDotNet" Version="0.4.3" />
+    <PackageReference Include="YDotNet.Extensions" Version="0.4.3" />
+    <PackageReference Include="YDotNet.Native.Win32" Version="0.4.3" />
+    <PackageReference Include="YDotNet.Server" Version="0.4.3" />
+    <PackageReference Include="YDotNet.Server.WebSockets" Version="0.4.3" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Controllers\" />
+    <Folder Include="Service\" />
   </ItemGroup>
 
 </Project>
