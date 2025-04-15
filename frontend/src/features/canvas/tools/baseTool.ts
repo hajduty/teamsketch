@@ -9,32 +9,37 @@ export interface Point {
   toolType?: string;
 }
 
-export interface Stroke {
-  pathId: string;
-  color: string;
-  toolType: string;
-  
+export interface CanvasObject {
+  id: string;
+  type: string;
+  [key: string]: any;
 }
 
 export interface ToolHandlers {
   handleMouseDown: (e: any) => void;
   handleMouseMove: (e: any) => void;
   handleMouseUp: () => void;
+  handleClick?: (e: any) => void;
+  handleDblClick?: (e: any) => void;
 }
 
 export interface ToolOptions {
   color: string;
   size: number;
+  fontSize?: number;
+  fontFamily?: string;
+  [key: string]: any;
 }
 
 export interface Tool {
   create: (
-    yPoints: Y.Array<Point>,
+    yObjects: Y.Map<any>,
     isDrawing: boolean,
     setIsDrawing: (drawing: boolean) => void,
-    currentPath: { current: number[] },
-    currentPathId: { current: string },
-    options: { current: ToolOptions }
+    currentState: { current: any },
+    options: { current: ToolOptions },
+    updateObjectsFromYjs: () => void
   ) => ToolHandlers;
-  updatePaths: (allPoints: Point[]) => { pathId: string; points: number[]; color: string; toolType: string }[];
+  
+  processObjects: (objects: CanvasObject[]) => CanvasObject[];
 }

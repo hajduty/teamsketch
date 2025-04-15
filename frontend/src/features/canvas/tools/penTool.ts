@@ -1,99 +1,93 @@
-import { Tool, Point, ToolHandlers } from "./baseTool";
+// tools/penTool.ts
+import { v4 as uuidv4 } from 'uuid';
+import { Tool, ToolHandlers } from './baseTool';
+import * as Y from 'yjs';
+import simplify from 'simplify-js';
 
 export const PenTool: Tool = {
   create: (
-    yPoints,
-    isDrawing,
-    setIsDrawing,
-    currentPath,
-    currentPathId,
-    options
+    yObjects: Y.Map<any>,
+    isDrawing: boolean,
+    setIsDrawing: (drawing: boolean) => void,
+    currentState: { current: any },
+    options: { current: any },
+    updateObjectsFromYjs: () => void
   ): ToolHandlers => {
-    const MIN_DISTANCE = 5;
-    let lastPos: { x: number; y: number } | null = null;
-
+    
     const handleMouseDown = (e: any) => {
       setIsDrawing(true);
-      currentPathId.current = Date.now().toString();
+      
       const stage = e.target.getStage();
-      const pos = stage.getPointerPosition();
-      if (!pos) return;
+      const pointerPosition = stage.getPointerPosition();
+      
+      const pathId = uuidv4();
+      // Create Yjs structure
+      const yPath = new Y.Map<any>();
+      const yPoints = new Y.Array<number>();
+      yPoints.push([pointerPosition.x, pointerPosition.y]);
 
-      currentPath.current = [pos.x, pos.y];
-      lastPos = pos;
+      yPath.set('id', pathId);
+      yPath.set('type', 'path');
+      yPath.set('points', yPoints);
+      yPath.set('color', options.current.color);
+      yPath.set('strokeWidth', options.current.size);
+      yPath.set('toolType', 'pen');
 
-      const newPoint: Point = {
-        x: pos.x,
-        y: pos.y,
-        pathId: currentPathId.current,
-        color: options.current.color,
-        toolType: 'pen'
+      yObjects.set(pathId, yPath);
+
+      currentState.current = {
+        pathId,
+        yPoints,
       };
-      yPoints.push([newPoint]);
-    };
 
+      updateObjectsFromYjs();
+    };
+    
     const handleMouseMove = (e: any) => {
       if (!isDrawing) return;
-
+      
       const stage = e.target.getStage();
-      const pos = stage.getPointerPosition();
-      if (!pos) return;
-
-      if (!lastPos) {
-        lastPos = pos;
-        return;
-      }
-
-      const dx = pos.x - lastPos.x;
-      const dy = pos.y - lastPos.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-
-      if (distance >= MIN_DISTANCE) {
-        currentPath.current.push(pos.x, pos.y);
-
-        const newPoint: Point = {
-          x: pos.x,
-          y: pos.y,
-          pathId: currentPathId.current,
-          toolType: 'pen'
-        };
-        yPoints.push([newPoint]);
-        lastPos = pos;
-      }
+      const pointerPosition = stage.getPointerPosition();
+      
+      const { yPoints } = currentState.current;
+      yPoints.push([pointerPosition.x, pointerPosition.y]);
+      updateObjectsFromYjs();
     };
-
+    
     const handleMouseUp = () => {
       setIsDrawing(false);
-      console.log(currentPath.current.length);
-      currentPath.current = [];
-      lastPos = null;
-    };
 
+      const { pathId, yPoints } = currentState.current;
+
+      const yPath = yObjects.get(pathId);
+      if (yPath) {
+        const rawPoints = yPoints.toArray();
+
+        const formattedPoints = [];
+        for (let i = 0; i < rawPoints.length; i += 2) {
+          formattedPoints.push({ x: rawPoints[i], y: rawPoints[i + 1] });
+        }
+
+        const simplified = simplify(formattedPoints, 2, false);
+        const flattenedSimplified = simplified.flatMap(p => [p.x, p.y]);
+
+        yPoints.delete(0, yPoints.length);
+        yPoints.push(flattenedSimplified);
+      }
+
+      updateObjectsFromYjs();
+      currentState.current = {};
+
+    };
+    
     return {
       handleMouseDown,
       handleMouseMove,
       handleMouseUp
     };
   },
-
-  updatePaths: (allPoints: Point[]) => {
-    const pathMap = new Map<string, { points: number[]; color: string; toolType: string }>();
-
-    allPoints.forEach((point) => {
-      if (!pathMap.has(point.pathId)) {
-        const firstPoint = allPoints.find(p => p.pathId === point.pathId);
-        const color = firstPoint?.color || "black";
-        const toolType = firstPoint?.toolType || "pen";
-        pathMap.set(point.pathId, { points: [], color, toolType });
-      }
-      pathMap.get(point.pathId)!.points.push(point.x, point.y);
-    });
-
-    return Array.from(pathMap.entries()).map(([pathId, { color, points, toolType }]) => ({
-      pathId,
-      points,
-      color,
-      toolType
-    }));
+  
+  processObjects: (objects) => {
+    return objects;
   }
 };

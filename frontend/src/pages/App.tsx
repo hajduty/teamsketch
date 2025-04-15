@@ -7,6 +7,7 @@ function App() {
   const [enteredName, setEnteredName] = useState<boolean>(false);
 
   const canvasRef = useRef<CanvasRef>(null);
+  const [tool, setTool] = useState<string>("pen");
 
   if (!enteredName) {
     return (
@@ -28,7 +29,7 @@ function App() {
   return (
     <>
     <Toolbar/>
-      <div className="fixed m-5 my-20 flex flex-col gap-4 z-3">
+{/*       <div className="fixed m-5 my-20 flex flex-col gap-4 z-3">
         <button className="hover:opacity-100 bg-button opacity-60 duration-200 rounded-sm p-4" onClick={() => canvasRef.current?.clearCanvas()}>
           Clear canvas
         </button>
@@ -38,9 +39,15 @@ function App() {
         <button className="hover:opacity-100 bg-gray-400 opacity-60 duration-200 rounded-sm p-4" onClick={() => canvasRef.current?.setColor("red")}>
           Red color
         </button>
-      </div>
+        <button className="hover:opacity-100 bg-gray-400 opacity-60 duration-200 rounded-sm p-4" onClick={() => canvasRef.current?.setTool("pen")}>
+          Set pen tool
+        </button>
+        <button className="hover:opacity-100 bg-gray-400 opacity-60 duration-200 rounded-sm p-4" onClick={() => canvasRef.current?.setTool("text")}>
+          Set text tool
+        </button>
+      </div> */}
       <div className="flex flex-row h-screen justify-center align-middle items-center justify-items-center bg-dark">
-        <Canvas ref={canvasRef} activeTool={"pen"}/>
+        <Canvas ref={canvasRef}/>
       </div>
     </>
   )

@@ -1,80 +1,114 @@
-import { useRef, useState, useEffect, forwardRef, useImperativeHandle } from "react";
-import { Stage, Layer, Line } from "react-konva";
+import { useRef, useState, useEffect, forwardRef, useImperativeHandle, FC } from "react";
+import { Stage, Layer } from "react-konva";
 import useWindowDimensions from "../../hooks/useWindowDimensions";
 import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
 import { PenTool } from "./tools/penTool";
-import { EraserTool } from "./tools/eraserTool";
-import { Point, Tool, ToolOptions } from "./tools/baseTool";
+import { TextTool } from "./tools/textTool";
+import { CanvasObject, Tool, ToolOptions } from "./tools/baseTool";
+import { TextRender } from "./components/TextRender";
+import PenRender from "./components/PenRender";
 
 export interface CanvasRef {
   clearCanvas: () => void;
   setColor: (color: string) => void;
   setTool: (tool: string) => void;
   setSize: (size: number) => void;
-}
-
-export interface CanvasProps {
-  activeTool: string;
+  setOption: (key: string, value: any) => void;
 }
 
 const TOOLS: Record<string, Tool> = {
   pen: PenTool,
-  eraser: EraserTool
+  text: TextTool
 };
 
-export const Canvas = forwardRef<CanvasRef, CanvasProps>(({ activeTool }, ref) => {
+const TOOLS_COMPONENTS: Record<string, FC<any>> = {
+  path: PenRender,
+  text: TextRender,
+};
+
+export const Canvas = forwardRef<CanvasRef>((_, ref) => {
   const { width, height } = useWindowDimensions();
-  const [paths, setPaths] = useState<{ pathId: string; points: number[]; color: string; toolType: string }[]>([]);
+  const [objects, setObjects] = useState<CanvasObject[]>([]);
   const [isDrawing, setIsDrawing] = useState(false);
-  const currentPath = useRef<number[]>([]);
-  const currentPathId = useRef<string>("");
+  const [activeTool, setActiveTool] = useState<string>("pen");
+  const currentState = useRef<any>({});
   const toolOptions = useRef<ToolOptions>({
     color: "black",
-    size: 5
+    size: 5,
+    fontSize: 16,
+    fontFamily: "Arial"
   });
 
   const ydoc = useRef(new Y.Doc()).current;
-  const yPoints = ydoc.getArray<Point>("points");
+  const yObjects = ydoc.getMap<any>("objects");
+
+  const updateObjectsFromYjs = () => {
+    const allObjects: CanvasObject[] = [];
+  
+    yObjects.forEach((value, key) => {
+      const plain = value.toJSON();
+  
+      allObjects.push({
+        ...plain,
+        id: key,
+      });
+    });
+  
+    const tool = TOOLS[activeTool] || PenTool;
+    setObjects(tool.processObjects(allObjects));
+  };
 
   useEffect(() => {
-    const provider = new WebsocketProvider("wss://192.168.0.112:7234", "ws", ydoc);
+    const provider = new WebsocketProvider("wss://localhost:5001", "ws", ydoc);
 
-    yPoints.observe(() => {
-      const newPoints = yPoints.toArray();
-      const tool = TOOLS[activeTool] || PenTool;
-      setPaths(tool.updatePaths(newPoints));
+    // Listen for changes to yObjects
+    yObjects.observe(() => {
+      updateObjectsFromYjs();
     });
 
     provider.connect();
 
-    return () => provider.disconnect();
-  },[]);
+    // Initial load of objects
+    updateObjectsFromYjs();
 
-  const { handleMouseDown, handleMouseMove, handleMouseUp } = (
-    TOOLS[activeTool] || PenTool
-  ).create(
-    yPoints,
+    return () => provider.disconnect();
+  }, [activeTool]);
+
+  const tool = TOOLS[activeTool] || PenTool;
+  const { 
+    handleMouseDown, 
+    handleMouseMove, 
+    handleMouseUp, 
+    handleClick, 
+    handleDblClick 
+  } = tool.create(
+    yObjects,
     isDrawing,
     setIsDrawing,
-    currentPath,
-    currentPathId,
-    toolOptions
+    currentState,
+    toolOptions,
+    updateObjectsFromYjs
   );
 
   useImperativeHandle(ref, () => ({
     clearCanvas: () => {
-      yPoints.delete(0, yPoints.length);
-      setPaths([]);
+      yObjects.forEach((_, key) => {
+        yObjects.delete(key);
+      });
+      setObjects([]);
     },
     setColor: (color: string) => {
       toolOptions.current.color = color;
     },
     setTool: (tool: string) => {
-      // Tool switching is handled by the activeTool prop
+      setActiveTool(tool);
     },
     setSize: (size: number) => {
       toolOptions.current.size = size;
+    },
+    setOption: (key: string, value: any) => {
+      toolOptions.current[key] = value;
     }
   }));
 
@@ -85,32 +119,23 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(({ activeTool }, ref) =
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
+      onClick={handleClick}
+      onDblClick={handleDblClick}
     >
       <Layer>
-        {paths.map((path) => {
-          if (path.toolType === 'eraser') {
-            return (
-              <Line
-                key={path.pathId}
-                points={path.points}
-                stroke={path.color}
-                strokeWidth={toolOptions.current.size * 2} // Make eraser larger
-                lineCap="round"
-                lineJoin="round"
-                globalCompositeOperation="destination-out" // This makes it erase
-              />
-            );
-          }
-          return (
-            <Line
-              key={path.pathId}
-              points={path.points}
-              stroke={path.color}
-              strokeWidth={toolOptions.current.size}
-              lineCap="round"
-              lineJoin="round"
+        {objects.map((obj) => {
+          const ToolComponent = TOOLS_COMPONENTS[obj.type];
+          return ToolComponent ? (
+            <ToolComponent
+              key={obj.id}
+              obj={obj}
+              yObjects={yObjects}
+              toolOptions={toolOptions}
+              activeTool={activeTool}
+              handleDblClick={handleDblClick}
+              updateObjectsFromYjs={updateObjectsFromYjs}
             />
-          );
+          ) : null;
         })}
       </Layer>
     </Stage>
