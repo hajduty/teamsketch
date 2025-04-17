@@ -1,5 +1,5 @@
 // TextTool.tsx
-import React from "react";
+import React, { useRef } from "react";
 import { Group, Rect, Text } from "react-konva";
 import * as Y from "yjs";
 import { CanvasObject } from "../tools/baseTool";
@@ -27,8 +27,39 @@ export const TextRender: React.FC<TextToolProps> = ({
   handleDblClick,
   updateObjectsFromYjs,
 }) => {
+  const textRef = useRef<any>(null);
   const paddingX = 8;
   const paddingY = 4;
+
+  const updatePosition = (x: number, y: number) => {
+    const yMap = yObjects.get(obj.id);
+    if (yMap instanceof Y.Map) {
+      yMap.set('x', x);
+      yMap.set('y', y);
+    }
+  };
+
+  const toggleSelection = (selected: boolean) => {
+    const yMap = yObjects.get(obj.id);
+    if (yMap instanceof Y.Map) {
+      yMap.set('selected', selected);
+    }
+  };
+
+  const measureText = () => {
+    const text = textRef.current;
+    if (!text) return { width: 100, height: 20 };
+    
+    const width = text.width();
+    const height = text.height();
+    
+    return {
+      width: Math.max(100, width),
+      height: Math.max(20, height)
+    };
+  };
+
+  const textMeasurements = measureText();
 
   return (
     <Group key={obj.id}>
@@ -43,20 +74,26 @@ export const TextRender: React.FC<TextToolProps> = ({
         draggable={true}
         onDragStart={() => {
           if (!obj.selected) {
-            const textObj = yObjects.get(obj.id);
-            if (textObj) {
-              yObjects.set(obj.id, { ...textObj, selected: true });
-            }
+            toggleSelection(true);
           }
         }}
         onDragEnd={(e) => {
-          const updated = { ...obj, x: e.target.x(), y: e.target.y() };
-          yObjects.set(obj.id, updated);
+          updatePosition(e.target.x(), e.target.y());
           updateObjectsFromYjs();
         }}
         onDblClick={(e) => {
           if (activeTool === "text" && handleDblClick) {
             handleDblClick(e);
+          }
+        }}
+        onClick={(e) => {
+          if (activeTool == "text") {
+            e.cancelBubble = true;
+            yObjects.forEach((item, itemId) => {
+              if (item instanceof Y.Map) {
+                item.set('selected', itemId === obj.id);
+              }
+            });
           }
         }}
       />

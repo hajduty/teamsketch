@@ -9,7 +9,8 @@ export const TextTool: Tool = {
     _isDrawing: boolean,
     _setIsDrawing: (drawing: boolean) => void,
     _currentState: { current: any },
-    options: { current: any }
+    options: { current: any },
+    updateObjectsFromYjs: () => void
   ): ToolHandlers => {
     const handleClick = (e: any) => {
       if (e.target.className === 'Text') {
@@ -17,13 +18,15 @@ export const TextTool: Tool = {
         const textId = textNode.attrs.id;
 
         yObjects.forEach((obj, id) => {
-          yObjects.set(id, { ...obj, selected: id === textId });
+          if (obj instanceof Y.Map) {
+            obj.set('selected', id === textId);
+          }
         });
       } else {
         // Deselect all
-        yObjects.forEach((obj, id) => {
-          if (obj.selected) {
-            yObjects.set(id, { ...obj, selected: false });
+        yObjects.forEach((obj) => {
+          if (obj instanceof Y.Map) {
+            obj.set('selected', false);
           }
         });
       }
@@ -35,6 +38,7 @@ export const TextTool: Tool = {
       if (e.target === stage) {
         // Double-clicked on empty stage, create text object
         const pointerPosition = stage.getPointerPosition();
+        console.log("dbl clicked");
 
         const textObj = {
           id: uuidv4(),
@@ -49,12 +53,15 @@ export const TextTool: Tool = {
         };
 
         yObjects.forEach((obj, id) => {
-          if (obj.selected) {
-            yObjects.set(id, { ...obj, selected: false });
+          if (obj instanceof Y.Map && obj.get('selected')) {
+            obj.set('selected', false);
           }
         });
 
-        yObjects.set(textObj.id, textObj);
+        const yTextObj = new Y.Map();
+        Object.entries(textObj).forEach(([key, value]) => yTextObj.set(key, value));
+        yObjects.set(textObj.id, yTextObj);
+
       } else if (e.target.className === 'Text') {
         // Edit existing text object
         const textNode = e.target;
@@ -63,7 +70,7 @@ export const TextTool: Tool = {
         const textPosition = textNode.getAbsolutePosition();
         const stageBox = stage.container().getBoundingClientRect();
         const textObj = yObjects.get(textId);
-        if (!textObj) return;
+        if (!textObj && !(textObj instanceof Y.Map)) return;
 
         textNode.hide();
         textNode.getLayer().batchDraw();
@@ -77,9 +84,9 @@ export const TextTool: Tool = {
         textarea.style.left = `${stageBox.left + textPosition.x}px`;
         textarea.style.width = `${Math.max(100, textNode.width())}px`;
         textarea.style.height = `${Math.max(40, textNode.height())}px`;
-        textarea.style.fontSize = `${textObj.fontSize}px`;
-        textarea.style.fontFamily = textObj.fontFamily;
-        textarea.style.color = textObj.color;
+        textarea.style.fontSize = `${textObj.get('fontSize')}px`;
+        textarea.style.fontFamily = textObj.get('fontFamily');
+        textarea.style.color = textObj.get('color');
         textarea.style.border = '1px solid #999';
         textarea.style.padding = '5px';
         textarea.style.margin = '0px';
@@ -88,26 +95,45 @@ export const TextTool: Tool = {
 
         textarea.focus();
 
+        let hasSaved = false;
+
         const saveText = () => {
+          if (hasSaved) return;
+          hasSaved = true;
+        
           const updatedText = textarea.value;
-          document.body.removeChild(textarea);
-
-          yObjects.set(textId, { ...textObj, text: updatedText });
+        
+          // Check if textarea is still in the DOM
+          if (textarea.isConnected) {
+            textarea.remove();
+          }
+        
+          if (textObj instanceof Y.Map) {
+            textObj.set('text', updatedText);
+          }
+        
           textNode.show();
-          textNode.getLayer().batchDraw();      
+          textNode.getLayer().batchDraw();
+          updateObjectsFromYjs();
         };
-
+        
         textarea.addEventListener('blur', saveText);
+        
         textarea.addEventListener('keydown', (e) => {
           if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            saveText();
+            saveText(); // Calls saveText which will handle removal of textarea
           } else if (e.key === 'Escape') {
-            document.body.removeChild(textarea);
+            hasSaved = true;
+            
+            if (textarea.isConnected) {
+              textarea.remove();
+            }
+        
             textNode.show();
-            textNode.getLayer().batchDraw();      
+            textNode.getLayer().batchDraw();
           }
-        });
+        });        
       }
     };
 

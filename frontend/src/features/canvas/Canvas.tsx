@@ -47,20 +47,30 @@ export const Canvas = forwardRef<CanvasRef>((_, ref) => {
     const allObjects: CanvasObject[] = [];
   
     yObjects.forEach((value, key) => {
-      const plain = value.toJSON();
+      if (value instanceof Y.Map) {
+        const plain: any = {};
+        value.forEach((val, subKey) => {
+          // if the value is a Y.Array, convert it to a JS array
+          if (val instanceof Y.Array) {
+            plain[subKey] = val.toArray();
+          } else {
+            plain[subKey] = val;
+          }
+        });
   
-      allObjects.push({
-        ...plain,
-        id: key,
-      });
+        allObjects.push({
+          ...plain,
+          id: key,
+        });
+      }
     });
   
     const tool = TOOLS[activeTool] || PenTool;
     setObjects(tool.processObjects(allObjects));
-  };
+  };  
 
   useEffect(() => {
-    const provider = new WebsocketProvider("wss://localhost:5001", "ws", ydoc);
+    const provider = new WebsocketProvider("wss://localhost:5001/collaboration", "ws", ydoc);
 
     // Listen for changes to yObjects
     yObjects.observe(() => {
