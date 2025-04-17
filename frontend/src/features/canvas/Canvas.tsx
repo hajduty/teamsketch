@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, forwardRef, useImperativeHandle, FC } from "react";
+import { useRef, useState, useEffect, forwardRef, useImperativeHandle, FC, useCallback } from "react";
 import { Stage, Layer } from "react-konva";
 import useWindowDimensions from "../../hooks/useWindowDimensions";
 import * as Y from "yjs";
@@ -8,6 +8,7 @@ import { TextTool } from "./tools/textTool";
 import { CanvasObject, Tool, ToolOptions } from "./tools/baseTool";
 import { TextRender } from "./components/TextRender";
 import PenRender from "./components/PenRender";
+import { useIsDoubleClick } from "../../hooks/useIsDoubleClick";
 
 export interface CanvasRef {
   clearCanvas: () => void;
@@ -28,6 +29,7 @@ const TOOLS_COMPONENTS: Record<string, FC<any>> = {
 };
 
 export const Canvas = forwardRef<CanvasRef>((_, ref) => {
+  const isDoubleClick = useIsDoubleClick(300);
   const { width, height } = useWindowDimensions();
   const [objects, setObjects] = useState<CanvasObject[]>([]);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -40,40 +42,50 @@ export const Canvas = forwardRef<CanvasRef>((_, ref) => {
     fontFamily: "Arial"
   });
 
+  // Yjs setup
   const ydoc = useRef(new Y.Doc()).current;
-  const yObjects = ydoc.getMap<any>("objects");
+  const yObjects = useRef(ydoc.getMap<any>("objects")).current;
+  const providerRef = useRef<WebsocketProvider | null>(null);
+  const updateTimeoutRef = useRef<number | null>(null);
 
-  const updateObjectsFromYjs = () => {
+  const updateObjectsFromYjs = useCallback(() => {
+    console.log('Updating objects from Yjs');
     const allObjects: CanvasObject[] = [];
-  
+    
     yObjects.forEach((value, key) => {
-      const plain = value.toJSON();
-  
-      allObjects.push({
-        ...plain,
-        id: key,
-      });
+      if (value instanceof Y.Map) {
+        const plain: any = { id: key };
+        value.forEach((val, subKey) => {
+          plain[subKey] = val instanceof Y.Array ? [...val.toArray()] : val;
+        });
+        allObjects.push(plain);
+      }
     });
   
-    const tool = TOOLS[activeTool] || PenTool;
-    setObjects(tool.processObjects(allObjects));
-  };
+    setObjects([...allObjects]);
+  }, [activeTool, yObjects]);
 
   useEffect(() => {
-    const provider = new WebsocketProvider("wss://localhost:5001", "ws", ydoc);
+    providerRef.current = new WebsocketProvider(
+      "wss://localhost:5001/collaboration", 
+      "ws", 
+      ydoc,
+      { connect: true }
+    );
 
-    // Listen for changes to yObjects
-    yObjects.observe(() => {
+    yObjects.observeDeep(() => {
       updateObjectsFromYjs();
     });
 
-    provider.connect();
-
-    // Initial load of objects
     updateObjectsFromYjs();
 
-    return () => provider.disconnect();
-  }, [activeTool]);
+    return () => {
+      providerRef.current?.disconnect();
+      if (updateTimeoutRef.current) {
+        window.clearTimeout(updateTimeoutRef.current);
+      }
+    };
+  }, [updateObjectsFromYjs, yObjects]);
 
   const tool = TOOLS[activeTool] || PenTool;
   const { 
@@ -88,15 +100,15 @@ export const Canvas = forwardRef<CanvasRef>((_, ref) => {
     setIsDrawing,
     currentState,
     toolOptions,
-    updateObjectsFromYjs
+    updateObjectsFromYjs,
+    activeTool
   );
 
   useImperativeHandle(ref, () => ({
     clearCanvas: () => {
-      yObjects.forEach((_, key) => {
-        yObjects.delete(key);
+      Y.transact(ydoc, () => {
+        yObjects.forEach((_, key) => yObjects.delete(key));
       });
-      setObjects([]);
     },
     setColor: (color: string) => {
       toolOptions.current.color = color;
@@ -120,8 +132,11 @@ export const Canvas = forwardRef<CanvasRef>((_, ref) => {
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onClick={handleClick}
-      onDblClick={handleDblClick}
-    >
+      onDblClick={(e) => {
+        if (isDoubleClick() && handleClick) {
+          handleDblClick?.(e);
+        }
+      }}      >
       <Layer>
         {objects.map((obj) => {
           const ToolComponent = TOOLS_COMPONENTS[obj.type];
@@ -132,7 +147,6 @@ export const Canvas = forwardRef<CanvasRef>((_, ref) => {
               yObjects={yObjects}
               toolOptions={toolOptions}
               activeTool={activeTool}
-              handleDblClick={handleDblClick}
               updateObjectsFromYjs={updateObjectsFromYjs}
             />
           ) : null;

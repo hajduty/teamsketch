@@ -1,8 +1,9 @@
-// TextTool.tsx
-import React from "react";
-import { Group, Rect, Text } from "react-konva";
+
+import React, { useRef, useEffect, useState, useCallback } from "react";
+import { Group, Text, Transformer } from "react-konva";
 import * as Y from "yjs";
 import { CanvasObject } from "../tools/baseTool";
+import { TextEditor } from "./TextEditor";
 
 export type TextToolProps = {
   obj: CanvasObject;
@@ -15,7 +16,6 @@ export type TextToolProps = {
     };
   };
   activeTool: string;
-  handleDblClick?: (e: any) => void;
   updateObjectsFromYjs: () => void;
 };
 
@@ -24,15 +24,95 @@ export const TextRender: React.FC<TextToolProps> = ({
   yObjects,
   toolOptions,
   activeTool,
-  handleDblClick,
   updateObjectsFromYjs,
 }) => {
-  const paddingX = 8;
-  const paddingY = 4;
+  const textRef = useRef<any>(null);
+  const transformerRef = useRef<any>(null);
+  const [shouldEdit, setShouldEdit] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const yObjRef = useRef<Y.Map<any> | null>(null);
+
+  // Get the Yjs map object once on mount
+  useEffect(() => {
+    yObjRef.current = yObjects.get(obj.id) as Y.Map<any>;
+  }, [obj.id, yObjects]);
+
+  // Edit mode handling
+  useEffect(() => {
+    if (shouldEdit && textRef.current) {
+      setIsEditing(true);
+      setShouldEdit(false);
+    }
+  }, [shouldEdit]);
+
+  // Transformer handling
+  useEffect(() => {
+    if (obj.selected && !isEditing && transformerRef.current && textRef.current) {
+      transformerRef.current.nodes([textRef.current]);
+      transformerRef.current.getLayer().batchDraw();
+    }
+  }, [obj.selected, isEditing]);
+
+  const updateObject = useCallback(
+    (properties: Partial<CanvasObject>) => {
+      if (!yObjRef.current) return;
+      
+      // Batch all updates together
+      Y.transact(yObjects.doc as Y.Doc, () => {
+        Object.entries(properties).forEach(([key, value]) => {
+          yObjRef.current?.set(key, value);
+        });
+      });
+      
+      updateObjectsFromYjs();
+    },
+    [yObjects, updateObjectsFromYjs]
+  );
+
+  const handleTextDblClick = useCallback(() => {
+    if (activeTool === "text") {
+      setShouldEdit(true);
+    }
+  }, [activeTool]);
+
+  const handleTextChange = useCallback(
+    (newText: string) => {
+      updateObject({ text: newText });
+    },
+    [updateObject]
+  );
+
+  const handleTransform = useCallback(() => {
+    const node = textRef.current;
+    if (!node) return;
+
+    const scaleX = node.scaleX();
+    const newWidth = Math.max(30, node.width() * scaleX);
+
+    updateObject({
+      width: newWidth,
+      x: node.x(),
+      y: node.y(),
+      rotation: node.rotation(),
+    });
+
+    node.scaleX(1);
+  }, [updateObject]);
+
+  const handleDragEnd = useCallback(
+    (e: any) => {
+      updateObject({
+        x: e.target.x(),
+        y: e.target.y(),
+      });
+    },
+    [updateObject]
+  );
 
   return (
     <Group key={obj.id}>
       <Text
+        ref={textRef}
         id={obj.id}
         x={obj.x}
         y={obj.y}
@@ -40,42 +120,52 @@ export const TextRender: React.FC<TextToolProps> = ({
         fontSize={obj.fontSize || toolOptions.current.fontSize}
         fontFamily={obj.fontFamily || toolOptions.current.fontFamily}
         fill={obj.color || toolOptions.current.color}
-        draggable={true}
-        onDragStart={() => {
-          if (!obj.selected) {
-            const textObj = yObjects.get(obj.id);
-            if (textObj) {
-              yObjects.set(obj.id, { ...textObj, selected: true });
-            }
-          }
-        }}
-        onDragEnd={(e) => {
-          const updated = { ...obj, x: e.target.x(), y: e.target.y() };
-          yObjects.set(obj.id, updated);
-          updateObjectsFromYjs();
-        }}
-        onDblClick={(e) => {
-          if (activeTool === "text" && handleDblClick) {
-            handleDblClick(e);
+        width={obj.width || 200}
+        rotation={obj.rotation || 0}
+        draggable={activeTool === "text" && !isEditing}
+        visible={!isEditing}
+        hitStrokeWidth={10}
+        perfectDrawEnabled={false}
+        listening={activeTool === "text"}
+        onDblClick={handleTextDblClick}
+        onDblTap={handleTextDblClick}
+        onTransform={handleTransform}
+        onDragEnd={handleDragEnd}
+        onClick={(e) => {
+          e.cancelBubble = true;
+          if (activeTool === "text") {
+            // Batch the selection update
+            Y.transact(yObjects.doc as Y.Doc, () => {
+              yObjects.forEach((item, itemId) => {
+                if (item instanceof Y.Map) {
+                  item.set("selected", itemId === obj.id);
+                }
+              });
+            });
+            updateObjectsFromYjs();
           }
         }}
       />
 
-      {obj.selected && (
-        <Rect
-          x={obj.x - paddingX}
-          y={obj.y - paddingY}
-          width={
-            (obj.text?.length || 0) *
-              (obj.fontSize || toolOptions.current.fontSize) *
-              0.6 +
-            paddingX * 2
-          }
-          height={(obj.fontSize || toolOptions.current.fontSize) * 1.2 + paddingY * 2}
-          stroke="#0096FF"
-          strokeWidth={1}
-          dash={[4, 4]}
-          listening={false}
+      {isEditing && textRef.current && (
+        <TextEditor
+          textNode={textRef.current}
+          onChange={(newText) => {
+            handleTextChange(newText);
+            setIsEditing(false);
+          }}
+          onClose={() => setIsEditing(false)}
+        />
+      )}
+
+      {obj.selected && !isEditing && activeTool === "text" && (
+        <Transformer
+          ref={transformerRef}
+          enabledAnchors={["middle-left", "middle-right"]}
+          boundBoxFunc={(oldBox, newBox) => ({
+            ...newBox,
+            width: Math.max(30, newBox.width),
+          })}
         />
       )}
     </Group>

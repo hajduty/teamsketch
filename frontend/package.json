@@ -16,6 +16,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-konva": "^19.0.3",
+    "react-konva-utils": "^1.1.0",
     "simplify-js": "^1.2.4",
     "tailwindcss": "^4.0.6",
     "uuid": "^11.1.0",

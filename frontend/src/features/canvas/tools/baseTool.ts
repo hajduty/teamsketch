@@ -38,7 +38,8 @@ export interface Tool {
     setIsDrawing: (drawing: boolean) => void,
     currentState: { current: any },
     options: { current: ToolOptions },
-    updateObjectsFromYjs: () => void
+    updateObjectsFromYjs: () => void,
+    activeTool: string
   ) => ToolHandlers;
   
   processObjects: (objects: CanvasObject[]) => CanvasObject[];
