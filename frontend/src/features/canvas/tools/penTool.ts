@@ -45,12 +45,16 @@ export const PenTool: Tool = {
     
     const handleMouseMove = (e: any) => {
       if (!isDrawing) return;
+      console.log("mouse movoing");
       
       const stage = e.target.getStage();
       const pointerPosition = stage.getPointerPosition();
       
       const { yPoints } = currentState.current;
-      yPoints.push([pointerPosition.x, pointerPosition.y]);
+      Y.transact(yPoints.doc as Y.Doc, () => {
+        yPoints.push([pointerPosition.x, pointerPosition.y]);
+      });
+
       updateObjectsFromYjs();
     };
     
@@ -71,13 +75,14 @@ export const PenTool: Tool = {
         const simplified = simplify(formattedPoints, 2, false);
         const flattenedSimplified = simplified.flatMap(p => [p.x, p.y]);
 
-        yPoints.delete(0, yPoints.length);
-        yPoints.push(flattenedSimplified);
+        Y.transact(yPath.doc as Y.Doc, () => {
+          yPoints.delete(0, yPoints.length);
+          yPoints.push(flattenedSimplified);
+        });
       }
 
       updateObjectsFromYjs();
       currentState.current = {};
-
     };
     
     return {
