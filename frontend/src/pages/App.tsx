@@ -1,4 +1,4 @@
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Canvas, CanvasRef } from "../features/canvas/Canvas";
 import { Toolbar } from "../features/canvas/components/Toolbar";
 
@@ -8,6 +8,12 @@ function App() {
 
   const canvasRef = useRef<CanvasRef>(null);
   const [tool, setTool] = useState<string>("pen");
+
+  useEffect(() => {
+    if (canvasRef.current) {
+      canvasRef.current.setTool(tool);
+    }
+  }, [tool]);
 
   if (!enteredName) {
     return (
@@ -28,8 +34,8 @@ function App() {
 
   return (
     <>
-    <Toolbar/>
-       <div className="fixed m-5 my-20 flex flex-col gap-4 z-3">
+    <Toolbar tool={tool} setTool={setTool} />
+{/*        <div className="fixed m-5 my-20 flex flex-col gap-4 z-3">
         <button className="hover:opacity-100 bg-button opacity-60 duration-200 rounded-sm p-4" onClick={() => canvasRef.current?.clearCanvas()}>
           Clear canvas
         </button>
@@ -45,7 +51,7 @@ function App() {
         <button className="hover:opacity-100 bg-gray-400 opacity-60 duration-200 rounded-sm p-4" onClick={() => canvasRef.current?.setTool("text")}>
           Set text tool
         </button>
-      </div>
+      </div> */}
       <div className="flex flex-row h-screen justify-center align-middle items-center justify-items-center bg-dark">
         <Canvas ref={canvasRef}/>
       </div>

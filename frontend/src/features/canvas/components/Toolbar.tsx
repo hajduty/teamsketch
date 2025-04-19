@@ -1,13 +1,10 @@
-import { useState } from "react";
 import { Button } from "../../../components/Button";
 import Icon from "../../../components/Icon";
 
-export const Toolbar = () => {
-  const [tool, setTool] = useState<string>("");
-
+export const Toolbar = ({ tool, setTool }: { tool: string, setTool: (tool: string) => void; }) => {
   const tools = [
     { name: "select", icon: "check_box_outline_blank" },
-    { name: "edit", icon: "edit" },
+    { name: "pen", icon: "edit" },
     { name: "text", icon: "text_fields" },
     { name: "settings", icon: "settings" }
   ];

@@ -12,7 +12,6 @@ import { useIsDoubleClick } from "../../hooks/useIsDoubleClick";
 
 export interface CanvasRef {
   clearCanvas: () => void;
-  setColor: (color: string) => void;
   setTool: (tool: string) => void;
   setSize: (size: number) => void;
   setOption: (key: string, value: any) => void;
@@ -51,7 +50,7 @@ export const Canvas = forwardRef<CanvasRef>((_, ref) => {
   const updateObjectsFromYjs = useCallback(() => {
     console.log('Updating objects from Yjs');
     const allObjects: CanvasObject[] = [];
-    
+
     yObjects.forEach((value, key) => {
       if (value instanceof Y.Map) {
         const plain: any = { id: key };
@@ -61,14 +60,14 @@ export const Canvas = forwardRef<CanvasRef>((_, ref) => {
         allObjects.push(plain);
       }
     });
-  
+
     setObjects([...allObjects]);
   }, [activeTool, yObjects]);
 
   useEffect(() => {
     providerRef.current = new WebsocketProvider(
-      "wss://localhost:5001/collaboration", 
-      "ws", 
+      "wss://localhost:5001/collaboration",
+      "ws",
       ydoc,
       { connect: true }
     );
@@ -88,12 +87,12 @@ export const Canvas = forwardRef<CanvasRef>((_, ref) => {
   }, [updateObjectsFromYjs, yObjects]);
 
   const tool = TOOLS[activeTool] || PenTool;
-  const { 
-    handleMouseDown, 
-    handleMouseMove, 
-    handleMouseUp, 
-    handleClick, 
-    handleDblClick 
+  const {
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp,
+    handleClick,
+    handleDblClick
   } = tool.create(
     yObjects,
     isDrawing,
@@ -109,9 +108,6 @@ export const Canvas = forwardRef<CanvasRef>((_, ref) => {
       Y.transact(ydoc, () => {
         yObjects.forEach((_, key) => yObjects.delete(key));
       });
-    },
-    setColor: (color: string) => {
-      toolOptions.current.color = color;
     },
     setTool: (tool: string) => {
       setActiveTool(tool);
@@ -136,7 +132,7 @@ export const Canvas = forwardRef<CanvasRef>((_, ref) => {
         if (isDoubleClick() && handleClick) {
           handleDblClick?.(e);
         }
-      }}      >
+      }}>
       <Layer>
         {objects.map((obj) => {
           const ToolComponent = TOOLS_COMPONENTS[obj.type];
