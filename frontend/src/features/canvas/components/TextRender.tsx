@@ -56,14 +56,14 @@ export const TextRender: React.FC<TextToolProps> = ({
   const updateObject = useCallback(
     (properties: Partial<CanvasObject>) => {
       if (!yObjRef.current) return;
-      
+
       // Batch all updates together
       Y.transact(yObjects.doc as Y.Doc, () => {
         Object.entries(properties).forEach(([key, value]) => {
           yObjRef.current?.set(key, value);
         });
       });
-      
+
       updateObjectsFromYjs();
     },
     [yObjects, updateObjectsFromYjs]
@@ -162,7 +162,7 @@ export const TextRender: React.FC<TextToolProps> = ({
         <Transformer
           ref={transformerRef}
           enabledAnchors={["middle-left", "middle-right"]}
-          boundBoxFunc={(oldBox, newBox) => ({
+          boundBoxFunc={(_oldBox, newBox) => ({
             ...newBox,
             width: Math.max(30, newBox.width),
           })}

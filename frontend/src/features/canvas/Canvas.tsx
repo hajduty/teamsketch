@@ -35,7 +35,7 @@ export const Canvas = forwardRef<CanvasRef>((_, ref) => {
   const [activeTool, setActiveTool] = useState<string>("pen");
   const currentState = useRef<any>({});
   const toolOptions = useRef<ToolOptions>({
-    color: "black",
+    color: "white",
     size: 5,
     fontSize: 16,
     fontFamily: "Arial"
