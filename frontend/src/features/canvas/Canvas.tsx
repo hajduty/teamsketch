@@ -13,7 +13,6 @@ import { useIsDoubleClick } from "../../hooks/useIsDoubleClick";
 export interface CanvasRef {
   clearCanvas: () => void;
   setTool: (tool: string) => void;
-  setSize: (size: number) => void;
   setOption: (key: string, value: any) => void;
 }
 
@@ -48,7 +47,7 @@ export const Canvas = forwardRef<CanvasRef>((_, ref) => {
   const updateTimeoutRef = useRef<number | null>(null);
 
   const updateObjectsFromYjs = useCallback(() => {
-    console.log('Updating objects from Yjs');
+    //console.log('Updating objects from Yjs');
     const allObjects: CanvasObject[] = [];
 
     yObjects.forEach((value, key) => {
@@ -111,9 +110,6 @@ export const Canvas = forwardRef<CanvasRef>((_, ref) => {
     },
     setTool: (tool: string) => {
       setActiveTool(tool);
-    },
-    setSize: (size: number) => {
-      toolOptions.current.size = size;
     },
     setOption: (key: string, value: any) => {
       toolOptions.current[key] = value;
