@@ -43,7 +43,7 @@ export const TextTool: Tool = {
 
       const stage = e.target.getStage();
       
-      if (e.target === stage || e.target.className === 'Layer') {
+      if (e.target === stage || e.target.className !== 'Text') {
         const pointerPosition = stage.getPointerPosition();
         
         if (!pointerPosition) return;

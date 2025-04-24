@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { Canvas, CanvasRef } from "../features/canvas/Canvas";
 import { Toolbar } from "../features/canvas/components/Toolbar";
+import { ToolOptions } from "../features/canvas/components/ToolOptions";
 
 function App() {
   const [name, setName] = useState<string>("");
@@ -34,26 +35,10 @@ function App() {
 
   return (
     <>
-    <Toolbar tool={tool} setTool={setTool} />
-{/*        <div className="fixed m-5 my-20 flex flex-col gap-4 z-3">
-        <button className="hover:opacity-100 bg-button opacity-60 duration-200 rounded-sm p-4" onClick={() => canvasRef.current?.clearCanvas()}>
-          Clear canvas
-        </button>
-        <button className="hover:opacity-100 bg-gray-400 opacity-60 duration-200 rounded-sm p-4" onClick={() => canvasRef.current?.setColor("white")}>
-          White color
-        </button>
-        <button className="hover:opacity-100 bg-gray-400 opacity-60 duration-200 rounded-sm p-4" onClick={() => canvasRef.current?.setColor("red")}>
-          Red color
-        </button>
-        <button className="hover:opacity-100 bg-gray-400 opacity-60 duration-200 rounded-sm p-4" onClick={() => canvasRef.current?.setTool("pen")}>
-          Set pen tool
-        </button>
-        <button className="hover:opacity-100 bg-gray-400 opacity-60 duration-200 rounded-sm p-4" onClick={() => canvasRef.current?.setTool("text")}>
-          Set text tool
-        </button>
-      </div> */}
-      <div className="flex flex-row h-screen justify-center align-middle items-center justify-items-center bg-dark">
-        <Canvas ref={canvasRef}/>
+      <Toolbar tool={tool} setTool={setTool} />
+      <ToolOptions tool={tool} canvasRef={canvasRef}/>
+      <div className="flex flex-row h-screen justify-center align-middle items-center justify-items-center bg-zinc-800">
+        <Canvas ref={canvasRef} />
       </div>
     </>
   )

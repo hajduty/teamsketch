@@ -10,7 +10,7 @@ export const Toolbar = ({ tool, setTool }: { tool: string, setTool: (tool: strin
   ];
 
   return (
-    <div className="flex h-6 hover:h-18 w-1/3 rounded-t-2xl bg-toolbar fixed bottom-0 left-1/2 -translate-x-1/2 justify-center items-center z-3 transform duration-150 border-t border-r border-l border-border group">
+    <div className="flex h-6 hover:h-18 w-1/3 rounded-t-2xl bg-zinc-950 fixed bottom-0 left-1/2 -translate-x-1/2 justify-center items-center z-3 transform duration-150 border-t border-r border-l border-border group">
       <div className="flex flex-row justify-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
         {tools.map(({ name, icon }) => (
           <Button key={name} onClick={() => setTool(name)} highlighted={tool === name}>
