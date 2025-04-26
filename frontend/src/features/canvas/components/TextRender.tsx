@@ -99,15 +99,23 @@ export const TextRender: React.FC<TextToolProps> = ({
     node.scaleX(1);
   }, [updateObject]);
 
-  const handleDragEnd = useCallback(
-    (e: any) => {
-      updateObject({
-        x: e.target.x(),
-        y: e.target.y(),
-      });
-    },
-    [updateObject]
-  );
+  const preventDefault = useCallback((e: any) => {
+    e.cancelBubble = true;
+    e.evt.stopImmediatePropagation();
+    e.evt.preventDefault();
+  }, []);
+  
+  const handleDragEnd = useCallback((e: any) => {
+    e.cancelBubble = true;
+    e.evt.stopImmediatePropagation();
+    
+    updateObject({
+      x: e.target.x(),
+      y: e.target.y(),
+    });
+  }, [updateObject]);
+  
+
 
   return (
     <Group key={obj.id}>
@@ -123,6 +131,8 @@ export const TextRender: React.FC<TextToolProps> = ({
         width={obj.width || 200}
         rotation={obj.rotation || 0}
         draggable={activeTool === "text" && !isEditing}
+        onDragStart={preventDefault}
+        onDragEnd={handleDragEnd}
         visible={!isEditing}
         hitStrokeWidth={10}
         perfectDrawEnabled={false}
@@ -130,7 +140,6 @@ export const TextRender: React.FC<TextToolProps> = ({
         onDblClick={handleTextDblClick}
         onDblTap={handleTextDblClick}
         onTransform={handleTransform}
-        onDragEnd={handleDragEnd}
         onClick={(e) => {
           e.cancelBubble = true;
           if (activeTool === "text") {
@@ -160,8 +169,10 @@ export const TextRender: React.FC<TextToolProps> = ({
 
       {obj.selected && !isEditing && activeTool === "text" && (
         <Transformer
+          onDragEnd={preventDefault}
+          onDragStart={preventDefault}
           ref={transformerRef}
-          enabledAnchors={["middle-left", "middle-right"]}
+          enabledAnchors={['top-left', 'top-center', 'top-right', 'middle-right', 'middle-left', 'bottom-left', 'bottom-center', 'bottom-right']}
           boundBoxFunc={(_oldBox, newBox) => ({
             ...newBox,
             width: Math.max(30, newBox.width),

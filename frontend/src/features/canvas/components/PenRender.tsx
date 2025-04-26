@@ -17,8 +17,6 @@ const PenRender: FC<PenRenderProps> = ({ obj }) => {
       strokeWidth={obj.strokeWidth || 2}
       lineCap="round"
       lineJoin="round"
-      bezier
-      tension={0.5}
       globalCompositeOperation={
         obj.toolType === "eraser" ? "destination-out" : "source-over"
       }

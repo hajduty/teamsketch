@@ -4,9 +4,9 @@ import EditableDropdown from "../../../components/EditableDropdown";
 import { Color } from "../../../components/Color";
 
 const PenOptions = ({ canvasRef }: { canvasRef: React.RefObject<CanvasRef | null>; }) => {
-  const options = ["2", "8", "32", "64"];
-  const simplifyOptions = ["0.5", "1", "2.5", "3"];
-  const tensionOptions = ["0.5", "1", "2.5", "3"];
+  const options = [2, 8, 32, 64];
+  const simplifyOptions = [0.5, 1, 2.5, 3];
+  const tensionOptions = [0.5, 1, 2.5, 3];
 
   return (
     <>
@@ -62,7 +62,7 @@ const PenOptions = ({ canvasRef }: { canvasRef: React.RefObject<CanvasRef | null
 }
 
 const TextOptions = ({ canvasRef }: { canvasRef: React.RefObject<CanvasRef | null>; }) => {
-  const fontSize = ["8", "9", "11", "12", "14", "18", "24", "30", "36", "48", "60", "72", "96"];
+  const fontSize = [8, 9, 11, 12, 14, 18, 24, 30, 36, 48, 60, 72, 96];
 
   return (
     <>

@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Tool, ToolHandlers } from './baseTool';
 import * as Y from 'yjs';
 import simplify from 'simplify-js';
+import { getTransformedPointer } from '../../../utils/optimizationUtils';
 
 export const PenTool: Tool = {
   create: (
@@ -18,7 +19,7 @@ export const PenTool: Tool = {
       setIsDrawing(true);
       
       const stage = e.target.getStage();
-      const pointerPosition = stage.getPointerPosition();
+      const pointerPosition = getTransformedPointer(stage);
       
       const pathId = uuidv4();
       // Create Yjs structure
@@ -47,7 +48,7 @@ export const PenTool: Tool = {
       if (!isDrawing) return;
       
       const stage = e.target.getStage();
-      const pointerPosition = stage.getPointerPosition();
+      const pointerPosition = getTransformedPointer(stage);
       
       const { yPoints } = currentState.current;
       Y.transact(yPoints.doc as Y.Doc, () => {
