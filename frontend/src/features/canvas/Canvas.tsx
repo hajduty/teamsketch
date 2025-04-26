@@ -5,10 +5,12 @@ import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
 import { PenTool } from "./tools/penTool";
 import { TextTool } from "./tools/textTool";
-import { CanvasObject, Tool, ToolOptions } from "./tools/baseTool";
+import { AwarenessState, CanvasObject, Tool, ToolOptions } from "./tools/baseTool";
 import { TextRender } from "./components/TextRender";
 import PenRender from "./components/PenRender";
 import { useIsDoubleClick } from "../../hooks/useIsDoubleClick";
+import { CursorsOverlay } from "./components/CursorOverlay";
+import { getTransformedPointer } from "../../utils/optimizationUtils";
 
 export interface CanvasRef {
   clearCanvas: () => void;
@@ -26,8 +28,13 @@ const TOOLS_COMPONENTS: Record<string, FC<any>> = {
   text: TextRender,
 };
 
-export const Canvas = forwardRef<CanvasRef>((_, ref) => {
-  const isDoubleClick = useIsDoubleClick(300);
+export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) => {
+  const stageRef = useRef<any>(null);
+  const [stageScale, setStageScale] = useState(1);
+  const [stagePosition, setStagePosition] = useState({ x: 0, y: 0 });
+  const [isSpacePressed, setIsSpacePressed] = useState(false);
+
+  const isDoubleClick = useIsDoubleClick(150);
   const { width, height } = useWindowDimensions();
   const [objects, setObjects] = useState<CanvasObject[]>([]);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -116,30 +123,111 @@ export const Canvas = forwardRef<CanvasRef>((_, ref) => {
     }
   }));
 
+  const wrappedHandleMouseMove = (e: any) => {
+    handleMouseMove?.(e);
+
+    const stage = stageRef.current;
+    if (!stage || !providerRef.current) return;
+
+    const pointerPos = getTransformedPointer(stage);
+    if (!pointerPos) return;
+
+    providerRef.current.awareness.setLocalStateField('cursorPosition', {
+      x: pointerPos.x,
+      y: pointerPos.y,
+    });
+  };
+
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.code === "Space") {
+      const stage = stageRef.current;
+      if (stage) {
+        stage.draggable(true);
+      }
+      setIsSpacePressed(true);
+    }
+  }, []);
+
+  const handleKeyUp = useCallback((e: KeyboardEvent) => {
+    if (e.code === "Space") {
+      const stage = stageRef.current;
+      if (stage) {
+        stage.draggable(false);
+      }
+      setIsSpacePressed(false);
+    }
+  }, []);
+
+
+  const handleWheelZoom = useCallback((e: any) => {
+    e.evt.preventDefault();
+    const stage = stageRef.current;
+    const oldScale = stageScale;
+    const pointer = stage.getPointerPosition();
+
+    const scaleBy = 1.05;
+    const direction = e.evt.deltaY > 0 ? -1 : 1;
+    const newScale = direction > 0 ? oldScale * scaleBy : oldScale / scaleBy;
+
+    const mousePointTo = {
+      x: (pointer!.x - stage.x()) / oldScale,
+      y: (pointer!.y - stage.y()) / oldScale,
+    };
+
+    const newPos = {
+      x: pointer!.x - mousePointTo.x * newScale,
+      y: pointer!.y - mousePointTo.y * newScale,
+    };
+
+    setStageScale(newScale);
+    setStagePosition(newPos);
+  }, [stageScale]);
+
+  const handleStageDragEnd = useCallback((e: any) => {
+    setStagePosition(e.target.position());
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, [handleKeyDown, handleKeyUp]);
+
   return (
     <Stage
+      ref={stageRef}
       width={width!}
       height={height!}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onClick={handleClick}
+      draggable={isSpacePressed}
+      scale={{ x: stageScale, y: stageScale }}
+      position={stagePosition}
+      onWheel={handleWheelZoom}
+      onDragEnd={handleStageDragEnd}
+      onMouseDown={!isSpacePressed ? handleMouseDown : undefined}
+      onMouseMove={!isSpacePressed ? wrappedHandleMouseMove : undefined}
+      onMouseUp={!isSpacePressed ? handleMouseUp : undefined}
+      onClick={!isSpacePressed ? handleClick : undefined}
       onDblClick={(e) => {
-        if (isDoubleClick() && handleClick) {
+        if (!isSpacePressed && (isDoubleClick() && handleClick)) {
           handleDblClick?.(e);
         }
-      }}>
+      }}
+    >
       <Layer>
         {objects.map((obj) => {
           const ToolComponent = TOOLS_COMPONENTS[obj.type];
           return ToolComponent ? (
             <ToolComponent
-              key={obj.id}
-              obj={obj}
-              yObjects={yObjects}
-              toolOptions={toolOptions}
-              activeTool={activeTool}
-              updateObjectsFromYjs={updateObjectsFromYjs}
+            key={obj.id}
+            obj={obj}
+            yObjects={yObjects}
+            toolOptions={toolOptions}
+            activeTool={activeTool}
+            updateObjectsFromYjs={updateObjectsFromYjs}
+            isSpacePressed={isSpacePressed}
             />
           ) : null;
         })}

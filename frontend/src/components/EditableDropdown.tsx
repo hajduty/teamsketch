@@ -2,9 +2,9 @@ import { useState, useRef, useEffect } from 'react';
 import Icon from './Icon';
 
 interface EditableDropdownProps {
-  options?: string[];
-  placeholder?: string;
-  onChange?: (value: string) => void;
+  options?: any[];
+  placeholder?: any;
+  onChange?: (value: any) => void;
   className?: string;
 }
 
@@ -15,7 +15,7 @@ export default function EditableDropdown({
   className = ""
 }: EditableDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [inputValue, setInputValue] = useState<string>("");
+  const [inputValue, setInputValue] = useState<any>("");
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -30,7 +30,7 @@ export default function EditableDropdown({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleOptionClick = (option: string) => {
+  const handleOptionClick = (option: any) => {
     setInputValue(option);
     setIsOpen(false);
     onChange?.(option);

@@ -26,3 +26,14 @@ export const validateStroke = (stroke: any): boolean => {
     stroke.tool &&
     stroke.points.every(Number.isFinite);
 };
+
+export const getTransformedPointer = (stage: any) => {
+  const scale = stage.scaleX();
+  const position = stage.position();
+  const pointer = stage.getPointerPosition();
+
+  return {
+    x: (pointer.x - position.x) / scale,
+    y: (pointer.y - position.y) / scale
+  };
+};

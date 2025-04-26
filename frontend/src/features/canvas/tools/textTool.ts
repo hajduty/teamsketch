@@ -2,6 +2,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Tool, ToolHandlers } from './baseTool';
 import * as Y from 'yjs';
+import { getTransformedPointer } from '../../../utils/optimizationUtils';
 
 export const TextTool: Tool = {
   create: (
@@ -44,7 +45,7 @@ export const TextTool: Tool = {
       const stage = e.target.getStage();
       
       if (e.target === stage || e.target.className !== 'Text') {
-        const pointerPosition = stage.getPointerPosition();
+        const pointerPosition = getTransformedPointer(stage);
         
         if (!pointerPosition) return;
 
@@ -53,7 +54,7 @@ export const TextTool: Tool = {
           type: 'text',
           x: pointerPosition.x,
           y: pointerPosition.y,
-          text: 'Double-click to edit',
+          text: 'Sample text',
           fontSize: options.current.fontSize || 16,
           fontFamily: options.current.fontFamily || 'Arial',
           color: options.current.color || '#000000',

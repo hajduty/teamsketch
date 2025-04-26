@@ -15,10 +15,19 @@ export interface CanvasObject {
   [key: string]: any;
 }
 
+export interface AwarenessState {
+  userId: string;
+  username: string;
+  cursorPosition: {
+    x: number;
+    y: number;
+  };
+}
+
 export interface ToolHandlers {
   handleMouseDown: (e: any) => void;
   handleMouseMove: (e: any) => void;
-  handleMouseUp: () => void;
+  handleMouseUp: (e :any) => void;
   handleClick?: (e: any) => void;
   handleDblClick?: (e: any) => void;
 }
