@@ -52,6 +52,7 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
   const yObjects = useRef(ydoc.getMap<any>("objects")).current;
   const providerRef = useRef<WebsocketProvider | null>(null);
   const updateTimeoutRef = useRef<number | null>(null);
+  const [otherCursors, setOtherCursors] = useState<AwarenessState[]>([]);
 
   const updateObjectsFromYjs = useCallback(() => {
     //console.log('Updating objects from Yjs');
@@ -77,6 +78,21 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
       ydoc,
       { connect: true }
     );
+
+    const awareness = providerRef.current.awareness;
+
+    awareness.setLocalState({
+      userId: "your-user-id", // Replace dynamically if needed
+      username: name,
+      cursorPosition: { x: 0, y: 0 },
+    });
+
+    // Listen for awareness updates
+    awareness.on('change', (changes: any) => {
+      const states = Array.from(awareness.getStates().values()) as AwarenessState[];
+      setOtherCursors(states.filter(s => s.username !== name));
+    });
+
 
     yObjects.observeDeep(() => {
       updateObjectsFromYjs();
@@ -231,6 +247,7 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
             />
           ) : null;
         })}
+        <CursorsOverlay cursors={otherCursors} scale={stageScale} />
       </Layer>
     </Stage>
   );

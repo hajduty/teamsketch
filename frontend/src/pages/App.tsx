@@ -37,8 +37,8 @@ function App() {
     <>
       <Toolbar tool={tool} setTool={setTool} />
       <ToolOptions tool={tool} canvasRef={canvasRef}/>
-      <div className="flex flex-row h-screen justify-center align-middle items-center justify-items-center bg-zinc-800">
-        <Canvas ref={canvasRef} />
+      <div className="flex flex-row h-screen justify-center align-middle items-center justify-items-center bg-zinc-800 relative">
+        <Canvas ref={canvasRef} name={name}/>
       </div>
     </>
   )
