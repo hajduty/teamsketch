@@ -11,6 +11,7 @@ import PenRender from "./components/PenRender";
 import { useIsDoubleClick } from "../../hooks/useIsDoubleClick";
 import { CursorsOverlay } from "./components/CursorOverlay";
 import { getTransformedPointer } from "../../utils/optimizationUtils";
+import { SelectTool } from "./tools/selectTool";
 
 export interface CanvasRef {
   clearCanvas: () => void;
@@ -20,7 +21,8 @@ export interface CanvasRef {
 
 const TOOLS: Record<string, Tool> = {
   pen: PenTool,
-  text: TextTool
+  text: TextTool,
+  select: SelectTool
 };
 
 const TOOLS_COMPONENTS: Record<string, FC<any>> = {
@@ -51,8 +53,11 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
   const ydoc = useRef(new Y.Doc()).current;
   const yObjects = useRef(ydoc.getMap<any>("objects")).current;
   const providerRef = useRef<WebsocketProvider | null>(null);
+  const awarenessRef = useRef<any>(null);
   const updateTimeoutRef = useRef<number | null>(null);
   const [otherCursors, setOtherCursors] = useState<AwarenessState[]>([]);
+
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const updateObjectsFromYjs = useCallback(() => {
     //console.log('Updating objects from Yjs');
@@ -79,20 +84,18 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
       { connect: true }
     );
 
-    const awareness = providerRef.current.awareness;
+    awarenessRef.current = providerRef.current.awareness;
 
-    awareness.setLocalState({
+    awarenessRef.current.setLocalState({
       userId: "your-user-id", // Replace dynamically if needed
       username: name,
       cursorPosition: { x: 0, y: 0 },
     });
-
-    // Listen for awareness updates
-    awareness.on('change', (changes: any) => {
-      const states = Array.from(awareness.getStates().values()) as AwarenessState[];
+    
+    awarenessRef.current.on('change', (_changes: any) => {
+      const states = Array.from(awarenessRef.current.getStates().values()) as AwarenessState[];
       setOtherCursors(states.filter(s => s.username !== name));
     });
-
 
     yObjects.observeDeep(() => {
       updateObjectsFromYjs();
@@ -122,7 +125,9 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
     currentState,
     toolOptions,
     updateObjectsFromYjs,
-    activeTool
+    activeTool,
+    setSelectedId,
+    awarenessRef.current?.getLocalState()?.username
   );
 
   useImperativeHandle(ref, () => ({
@@ -133,6 +138,8 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
     },
     setTool: (tool: string) => {
       setActiveTool(tool);
+
+      updateObjectsFromYjs();
     },
     setOption: (key: string, value: any) => {
       toolOptions.current[key] = value;
@@ -244,6 +251,8 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
             activeTool={activeTool}
             updateObjectsFromYjs={updateObjectsFromYjs}
             isSpacePressed={isSpacePressed}
+            isSelected={selectedId === obj.id}
+            stageRef={stageRef}
             />
           ) : null;
         })}

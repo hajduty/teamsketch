@@ -20,21 +20,13 @@ export const TextTool: Tool = {
       const clickedOnText = e.target.findAncestor('Text');
       
       Y.transact(yObjects.doc as Y.Doc, () => {
-        if (clickedOnText) {
-          const textId = clickedOnText.attrs.id;
-          yObjects.forEach((obj, id) => {
-            if (obj instanceof Y.Map) {
-              obj.set('selected', id === textId);
-            }
-          });
-        } else {
+        if (!clickedOnText) {
           yObjects.forEach((obj) => {
             if (obj instanceof Y.Map) {
               obj.set('selected', false);
             }
           });
-        }
-      });
+      }});
       
       updateObjectsFromYjs();
     };

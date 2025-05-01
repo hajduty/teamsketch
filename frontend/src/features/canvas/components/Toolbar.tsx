@@ -3,7 +3,7 @@ import Icon from "../../../components/Icon";
 
 export const Toolbar = ({ tool, setTool }: { tool: string, setTool: (tool: string) => void; }) => {
   const tools = [
-    { name: "select", icon: "check_box_outline_blank" },
+    { name: "select", icon: "arrow_selector_tool" },
     { name: "pen", icon: "edit" },
     { name: "text", icon: "text_fields" },
     { name: "settings", icon: "settings" }

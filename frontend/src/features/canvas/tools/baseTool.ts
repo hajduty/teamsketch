@@ -30,6 +30,7 @@ export interface ToolHandlers {
   handleMouseUp: (e :any) => void;
   handleClick?: (e: any) => void;
   handleDblClick?: (e: any) => void;
+  handleSelect?: (e: any) => void;
 }
 
 export interface ToolOptions {
@@ -48,7 +49,9 @@ export interface Tool {
     currentState: { current: any },
     options: { current: ToolOptions },
     updateObjectsFromYjs: () => void,
-    activeTool: string
+    activeTool: string,
+    setSelectedId: (id: string) => void,
+    userId: string
   ) => ToolHandlers;
   
   processObjects: (objects: CanvasObject[]) => CanvasObject[];
