@@ -17,7 +17,6 @@ const COLORS = [
 ];
 
 export const CursorsOverlay: FC<CursorsOverlayProps> = ({ cursors, scale }) => {
-  console.log(scale);
   return (
     <>
       {cursors.map((cursor, _index) => (

@@ -1,9 +1,10 @@
 // tools/penTool.ts
 import { v4 as uuidv4 } from 'uuid';
-import { Tool, ToolHandlers } from './baseTool';
+import { Tool, ToolHandlers, ToolOptions } from './baseTool';
 import * as Y from 'yjs';
 import simplify from 'simplify-js';
 import { getTransformedPointer } from '../../../utils/optimizationUtils';
+import { History } from '../Canvas';
 
 export const PenTool: Tool = {
   create: (
@@ -11,10 +12,18 @@ export const PenTool: Tool = {
     isDrawing: boolean,
     setIsDrawing: (drawing: boolean) => void,
     currentState: { current: any },
-    options: { current: any },
-    updateObjectsFromYjs: () => void
+    options: { current: ToolOptions },
+    updateObjectsFromYjs: () => void,
+    activeTool: string,
+    setSelectedId: (id: string) => void,
+    userId: string,
+    addToHistory: (state: History) => void
   ): ToolHandlers => {
-    
+    const state: History = {
+      after: "", before: "", deleted: false, id: "",
+      historyId: ''
+    };
+
     const handleMouseDown = (e: any) => {
       setIsDrawing(true);
       
@@ -35,6 +44,7 @@ export const PenTool: Tool = {
       yPath.set('toolType', 'pen');
 
       yObjects.set(pathId, yPath);
+      state.before = {pathId, yPath};
 
       currentState.current = {
         pathId,
@@ -81,6 +91,9 @@ export const PenTool: Tool = {
         });
       }
 
+      state.after = {pathId, yPath};
+      
+      addToHistory(state);
       updateObjectsFromYjs();
       currentState.current = {};
     };

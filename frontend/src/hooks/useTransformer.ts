@@ -1,15 +1,22 @@
 import { useEffect, useRef, useCallback } from "react";
 import * as Y from "yjs";
 import { CanvasObject } from "../features/canvas/tools/baseTool";
+import { History } from "../features/canvas/Canvas";
 
 export function useTransformer(
   obj: CanvasObject,
   yObjects: Y.Map<any>,
-  updateObjectsFromYjs: () => void
+  updateObjectsFromYjs: () => void,
+  addToHistory: (state: History) => void
 ) {
   const shapeRef = useRef<any>(null);
   const transformerRef = useRef<any>(null);
   const yObjRef = useRef<Y.Map<any> | null>(null);
+
+  const state: History = {
+    after: '', before: '', deleted: false, id: '',
+    historyId: ""
+  };
 
   useEffect(() => {
     yObjRef.current = yObjects.get(obj.id) as Y.Map<any>;
@@ -56,6 +63,10 @@ export function useTransformer(
     node.scaleY(1);
   }, [updateObject]);
 
+  const handleDragStart = useCallback((e: any) => {
+    state.before = {x: e.target.x(),y: e.target.y()};
+  }, [updateObject]);
+
   const handleDragMove = useCallback((_e: any) => {
     if (!shapeRef.current) return;
     const node = shapeRef.current;
@@ -72,6 +83,9 @@ export function useTransformer(
       x: e.target.x(),
       y: e.target.y(),
     });
+    state.id = shapeRef.current.attrs.id;
+    state.after = {x: e.target.x(),y: e.target.y()};
+    addToHistory(state);
   }, [updateObject]);
 
   const preventDefault = useCallback((e: any) => {
@@ -88,6 +102,7 @@ export function useTransformer(
     handleTransformEnd,
     handleDragMove,
     handleDragEnd,
+    handleDragStart,
     preventDefault,
   };
 }

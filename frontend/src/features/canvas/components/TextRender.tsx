@@ -4,6 +4,7 @@ import * as Y from "yjs";
 import { CanvasObject } from "../tools/baseTool";
 import { TextEditor } from "./TextEditor";
 import { useTransformer } from "../../../hooks/useTransformer";
+import { History } from "../Canvas";
 
 export type TextToolProps = {
   obj: CanvasObject;
@@ -17,6 +18,7 @@ export type TextToolProps = {
   };
   activeTool: string;
   updateObjectsFromYjs: () => void;
+  addToHistory: (state: History) => void;
 };
 
 export const TextRender: React.FC<TextToolProps> = ({
@@ -25,6 +27,7 @@ export const TextRender: React.FC<TextToolProps> = ({
   toolOptions,
   activeTool,
   updateObjectsFromYjs,
+  addToHistory
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const {
@@ -35,7 +38,7 @@ export const TextRender: React.FC<TextToolProps> = ({
     handleDragEnd,
     preventDefault,
     updateObject,
-  } = useTransformer(obj, yObjects, updateObjectsFromYjs);
+  } = useTransformer(obj, yObjects, updateObjectsFromYjs, addToHistory);
 
   useEffect(() => {
     if (!isEditing) {

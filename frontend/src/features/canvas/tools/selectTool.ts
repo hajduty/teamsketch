@@ -14,7 +14,6 @@ export const SelectTool: Tool = {
     _setSelectedId: (id: string) => void,
     _userId: string
   ): ToolHandlers => {
-
     const handleClick = (e: any) => {
       const node = e.target;
       const validTypes = ['Text', 'Line'];

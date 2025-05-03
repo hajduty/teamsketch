@@ -3,6 +3,7 @@ import { Line, Transformer } from "react-konva";
 import { CanvasObject } from "../tools/baseTool";
 import { useTransformer } from "../../../hooks/useTransformer";
 import * as Y from "yjs";
+import { History } from "../Canvas";
 
 interface PenRenderProps {
   obj: CanvasObject;
@@ -10,12 +11,14 @@ interface PenRenderProps {
   stageRef: any;
   yObjects: Y.Map<any>;
   updateObjectsFromYjs: () => void;
+  addToHistory: (state: History) => void;
 }
 
 const PenRender: FC<PenRenderProps> = ({
   obj,
   yObjects,
   updateObjectsFromYjs,
+  addToHistory
 }) => {
   const {
     shapeRef,
@@ -25,7 +28,8 @@ const PenRender: FC<PenRenderProps> = ({
     handleDragMove,
     handleDragEnd,
     preventDefault,
-  } = useTransformer(obj, yObjects, updateObjectsFromYjs);
+    handleDragStart,
+  } = useTransformer(obj, yObjects, updateObjectsFromYjs, addToHistory);
 
   useEffect(() => {
     bindTransformer();
@@ -49,6 +53,7 @@ const PenRender: FC<PenRenderProps> = ({
         lineCap="round"
         lineJoin="round"
         draggable={obj.selected}
+        onDragStart={handleDragStart}
         onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
         onTransformEnd={handleTransformEnd}

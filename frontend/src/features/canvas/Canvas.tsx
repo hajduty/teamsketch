@@ -12,11 +12,23 @@ import { useIsDoubleClick } from "../../hooks/useIsDoubleClick";
 import { CursorsOverlay } from "./components/CursorOverlay";
 import { getTransformedPointer } from "../../utils/optimizationUtils";
 import { SelectTool } from "./tools/selectTool";
+import { clearCanvas, undo, redo } from "./canvasActions";
 
 export interface CanvasRef {
   clearCanvas: () => void;
   setTool: (tool: string) => void;
   setOption: (key: string, value: any) => void;
+  historyState: History[];
+  undo: () => void;
+  redo: () => void;
+}
+
+export interface History {
+  id: string;            // Object ID
+  historyId: string;     // Unique history entry ID
+  before: any;           // State before change
+  after: any;            // State after change
+  deleted: boolean;      // Whether this history entry has been undone
 }
 
 const TOOLS: Record<string, Tool> = {
@@ -35,6 +47,9 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
   const [stageScale, setStageScale] = useState(1);
   const [stagePosition, setStagePosition] = useState({ x: 0, y: 0 });
   const [isSpacePressed, setIsSpacePressed] = useState(false);
+  const [history, setHistory] = useState<History[]>([]);
+  // Create a ref to track the current history state
+  const historyRef = useRef<History[]>([]);
 
   const isDoubleClick = useIsDoubleClick(150);
   const { width, height } = useWindowDimensions();
@@ -59,8 +74,29 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
+  // Update historyRef whenever history state changes
+  useEffect(() => {
+    historyRef.current = history;
+  }, [history]);
+
+  // Generate a unique ID for history entries
+  const generateHistoryId = () => {
+    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+  };
+
+  const addToHistory = (state: History) => {
+    const stateWithId = {
+      ...state,
+      historyId: state.historyId || generateHistoryId()
+    };
+    
+    setHistory(prev => {
+      const newHistory = [...prev, stateWithId];
+      return newHistory;
+    });
+  };
+
   const updateObjectsFromYjs = useCallback(() => {
-    //console.log('Updating objects from Yjs');
     const allObjects: CanvasObject[] = [];
 
     yObjects.forEach((value, key) => {
@@ -91,7 +127,7 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
       username: name,
       cursorPosition: { x: 0, y: 0 },
     });
-    
+
     awarenessRef.current.on('change', (_changes: any) => {
       const states = Array.from(awarenessRef.current.getStates().values()) as AwarenessState[];
       setOtherCursors(states.filter(s => s.username !== name));
@@ -127,25 +163,23 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
     updateObjectsFromYjs,
     activeTool,
     setSelectedId,
-    awarenessRef.current?.getLocalState()?.username
+    awarenessRef.current?.getLocalState()?.username,
+    addToHistory
   );
 
   useImperativeHandle(ref, () => ({
-    clearCanvas: () => {
-      Y.transact(ydoc, () => {
-        yObjects.forEach((_, key) => yObjects.delete(key));
-      });
-    },
-    setTool: (tool: string) => {
-      setActiveTool(tool);
-
-      updateObjectsFromYjs();
-    },
+    clearCanvas: () => clearCanvas(yObjects, ydoc),
+    setTool: (tool: string) => setActiveTool(tool),
     setOption: (key: string, value: any) => {
       toolOptions.current[key] = value;
-    }
+    },
+    get historyState() {
+      return historyRef.current;
+    },
+    undo: () => undo(historyRef, setHistory, stageRef),
+    redo: () => redo(historyRef, setHistory, stageRef),
   }));
-
+  
   const wrappedHandleMouseMove = (e: any) => {
     handleMouseMove?.(e);
 
@@ -244,15 +278,16 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
           const ToolComponent = TOOLS_COMPONENTS[obj.type];
           return ToolComponent ? (
             <ToolComponent
-            key={obj.id}
-            obj={obj}
-            yObjects={yObjects}
-            toolOptions={toolOptions}
-            activeTool={activeTool}
-            updateObjectsFromYjs={updateObjectsFromYjs}
-            isSpacePressed={isSpacePressed}
-            isSelected={selectedId === obj.id}
-            stageRef={stageRef}
+              key={obj.id}
+              obj={obj}
+              yObjects={yObjects}
+              toolOptions={toolOptions}
+              activeTool={activeTool}
+              updateObjectsFromYjs={updateObjectsFromYjs}
+              addToHistory={addToHistory}
+              isSpacePressed={isSpacePressed}
+              isSelected={selectedId === obj.id}
+              stageRef={stageRef}
             />
           ) : null;
         })}
