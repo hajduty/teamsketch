@@ -38,6 +38,8 @@ export const TextRender: React.FC<TextToolProps> = ({
     handleDragEnd,
     preventDefault,
     updateObject,
+    handleDragStart,
+    handleDragMove
   } = useTransformer(obj, yObjects, updateObjectsFromYjs, addToHistory);
 
   useEffect(() => {
@@ -54,6 +56,8 @@ export const TextRender: React.FC<TextToolProps> = ({
 
   const handleTextChange = useCallback((newText: string) => {
     updateObject({ text: newText });
+    const state: History = {before: {text: obj.text}, after: {text: newText}, id: obj.id};
+    addToHistory(state);
     setIsEditing(false);
   }, [updateObject]);
 
@@ -64,7 +68,6 @@ export const TextRender: React.FC<TextToolProps> = ({
         yObjects.forEach((item, itemId) => {
           if (item instanceof Y.Map) {
             item.set("selected", itemId === obj.id);
-            console.log(itemId);
           }
         });
       });
@@ -86,7 +89,8 @@ export const TextRender: React.FC<TextToolProps> = ({
         width={obj.width || 200}
         rotation={obj.rotation || 0}
         draggable={!isEditing}
-        onDragStart={preventDefault}
+        onDragMove={handleDragMove}
+        onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
         visible={!isEditing}
         perfectDrawEnabled={false}

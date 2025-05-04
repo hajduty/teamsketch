@@ -10,7 +10,7 @@ import { TextRender } from "./components/TextRender";
 import PenRender from "./components/PenRender";
 import { useIsDoubleClick } from "../../hooks/useIsDoubleClick";
 import { CursorsOverlay } from "./components/CursorOverlay";
-import { getTransformedPointer } from "../../utils/optimizationUtils";
+import { generateHistoryId, getTransformedPointer } from "../../utils/utils";
 import { SelectTool } from "./tools/selectTool";
 import { clearCanvas, undo, redo } from "./canvasActions";
 
@@ -19,16 +19,18 @@ export interface CanvasRef {
   setTool: (tool: string) => void;
   setOption: (key: string, value: any) => void;
   historyState: History[];
+  historyIndex: number;
   undo: () => void;
   redo: () => void;
 }
 
 export interface History {
   id: string;            // Object ID
-  historyId: string;     // Unique history entry ID
+  historyId?: string;     // Unique history entry ID
   before: any;           // State before change
   after: any;            // State after change
-  deleted: boolean;      // Whether this history entry has been undone
+  deleted?: boolean;      // Whether this history entry has been undone
+  operation?: string;     // Type of change
 }
 
 const TOOLS: Record<string, Tool> = {
@@ -47,9 +49,10 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
   const [stageScale, setStageScale] = useState(1);
   const [stagePosition, setStagePosition] = useState({ x: 0, y: 0 });
   const [isSpacePressed, setIsSpacePressed] = useState(false);
+
   const [history, setHistory] = useState<History[]>([]);
-  // Create a ref to track the current history state
   const historyRef = useRef<History[]>([]);
+  const historyIndexRef = useRef<number>(-1);
 
   const isDoubleClick = useIsDoubleClick(150);
   const { width, height } = useWindowDimensions();
@@ -69,7 +72,6 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
   const yObjects = useRef(ydoc.getMap<any>("objects")).current;
   const providerRef = useRef<WebsocketProvider | null>(null);
   const awarenessRef = useRef<any>(null);
-  const updateTimeoutRef = useRef<number | null>(null);
   const [otherCursors, setOtherCursors] = useState<AwarenessState[]>([]);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -78,22 +80,26 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
   useEffect(() => {
     historyRef.current = history;
   }, [history]);
-
-  // Generate a unique ID for history entries
-  const generateHistoryId = () => {
-    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-  };
-
+  
   const addToHistory = (state: History) => {
     const stateWithId = {
       ...state,
       historyId: state.historyId || generateHistoryId()
     };
+
+    const trimmed = historyRef.current.slice(0, historyIndexRef.current + 1);
+    trimmed.push(state);
+    historyRef.current = trimmed;
+    historyIndexRef.current++;
+    console.log(state);
     
     setHistory(prev => {
       const newHistory = [...prev, stateWithId];
       return newHistory;
     });
+    
+    const event = new CustomEvent('historyStateChange');
+    document.dispatchEvent(event);
   };
 
   const updateObjectsFromYjs = useCallback(() => {
@@ -137,13 +143,8 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
       updateObjectsFromYjs();
     });
 
-    updateObjectsFromYjs();
-
     return () => {
       providerRef.current?.disconnect();
-      if (updateTimeoutRef.current) {
-        window.clearTimeout(updateTimeoutRef.current);
-      }
     };
   }, [updateObjectsFromYjs, yObjects]);
 
@@ -176,10 +177,13 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
     get historyState() {
       return historyRef.current;
     },
-    undo: () => undo(historyRef, setHistory, stageRef),
-    redo: () => redo(historyRef, setHistory, stageRef),
+    get historyIndex() {
+      return historyIndexRef.current;
+    },
+    undo: () => undo(historyRef, setHistory, historyIndexRef, yObjects),
+    redo: () => redo(historyRef, setHistory, historyIndexRef, yObjects, ydoc),
   }));
-  
+
   const wrappedHandleMouseMove = (e: any) => {
     handleMouseMove?.(e);
 
@@ -214,7 +218,6 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
       setIsSpacePressed(false);
     }
   }, []);
-
 
   const handleWheelZoom = useCallback((e: any) => {
     e.evt.preventDefault();

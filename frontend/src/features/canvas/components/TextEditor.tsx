@@ -19,7 +19,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({ textNode, onClose, onCha
     const stageBox = stage.container().getBoundingClientRect();
   
     const absPos = textNode.getAbsolutePosition();
-    const scale = stage.scaleX(); // assuming uniform scale
+    const scale = stage.scaleX();
   
     const stageOffset = stage.position();
   

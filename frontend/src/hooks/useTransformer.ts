@@ -13,10 +13,14 @@ export function useTransformer(
   const transformerRef = useRef<any>(null);
   const yObjRef = useRef<Y.Map<any> | null>(null);
 
-  const state: History = {
-    after: '', before: '', deleted: false, id: '',
-    historyId: ""
-  };
+  const state = useRef<History>({
+    after: {}, 
+    before: {}, 
+    deleted: false, 
+    id: '',
+    historyId: "", 
+    operation: "move"
+  });
 
   useEffect(() => {
     yObjRef.current = yObjects.get(obj.id) as Y.Map<any>;
@@ -58,13 +62,14 @@ export function useTransformer(
       scaleX,
       scaleY,
     });
+    console.log("transformed end");
 
     node.scaleX(1);
     node.scaleY(1);
   }, [updateObject]);
 
   const handleDragStart = useCallback((e: any) => {
-    state.before = {x: e.target.x(),y: e.target.y()};
+    state.current.before = {x: e.target.x(),y: e.target.y()};
   }, [updateObject]);
 
   const handleDragMove = useCallback((_e: any) => {
@@ -83,9 +88,10 @@ export function useTransformer(
       x: e.target.x(),
       y: e.target.y(),
     });
-    state.id = shapeRef.current.attrs.id;
-    state.after = {x: e.target.x(),y: e.target.y()};
-    addToHistory(state);
+    state.current.id = shapeRef.current.attrs.id;
+    state.current.after = {x: e.target.x(),y: e.target.y()};
+    addToHistory(state.current);
+    console.log(shapeRef.current);
   }, [updateObject]);
 
   const preventDefault = useCallback((e: any) => {

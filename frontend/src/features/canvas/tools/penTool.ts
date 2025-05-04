@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Tool, ToolHandlers, ToolOptions } from './baseTool';
 import * as Y from 'yjs';
 import simplify from 'simplify-js';
-import { getTransformedPointer } from '../../../utils/optimizationUtils';
+import { getTransformedPointer } from '../../../utils/utils';
 import { History } from '../Canvas';
 
 export const PenTool: Tool = {
@@ -14,14 +14,14 @@ export const PenTool: Tool = {
     currentState: { current: any },
     options: { current: ToolOptions },
     updateObjectsFromYjs: () => void,
-    activeTool: string,
-    setSelectedId: (id: string) => void,
-    userId: string,
+    _activeTool: string,
+    _setSelectedId: (id: string) => void,
+    _userId: string,
     addToHistory: (state: History) => void
   ): ToolHandlers => {
     const state: History = {
       after: "", before: "", deleted: false, id: "",
-      historyId: ''
+      historyId: '', operation: "create"
     };
 
     const handleMouseDown = (e: any) => {
@@ -31,7 +31,6 @@ export const PenTool: Tool = {
       const pointerPosition = getTransformedPointer(stage);
       
       const pathId = uuidv4();
-      // Create Yjs structure
       const yPath = new Y.Map<any>();
       const yPoints = new Y.Array<number>();
       yPoints.push([pointerPosition.x, pointerPosition.y]);
@@ -44,7 +43,7 @@ export const PenTool: Tool = {
       yPath.set('toolType', 'pen');
 
       yObjects.set(pathId, yPath);
-      state.before = {pathId, yPath};
+      state.before = yPath;
 
       currentState.current = {
         pathId,
@@ -85,16 +84,26 @@ export const PenTool: Tool = {
         const simplified = simplify(formattedPoints, options.current.simplify, false);
         const flattenedSimplified = simplified.flatMap(p => [p.x, p.y]);
 
-        Y.transact(yPath.doc as Y.Doc, () => {
-          yPoints.delete(0, yPoints.length);
-          yPoints.push(flattenedSimplified);
-        });
-      }
+        state.after = {
+          id: pathId,
+          type: 'path',
+          points: flattenedSimplified,
+          color: options.current.color,
+          strokeWidth: options.current.size,
+          toolType: 'pen'
+        };
+        state.id = pathId;
 
-      state.after = {pathId, yPath};
+        if (flattenedSimplified.length > 2) {
+          Y.transact(yPath.doc as Y.Doc, () => {
+            yPoints.delete(0, yPoints.length);
+            yPoints.push(flattenedSimplified);
+          });
+          addToHistory(state);
+          updateObjectsFromYjs();
+        }
+      }
       
-      addToHistory(state);
-      updateObjectsFromYjs();
       currentState.current = {};
     };
     
