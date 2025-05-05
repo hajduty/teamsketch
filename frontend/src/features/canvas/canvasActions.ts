@@ -57,9 +57,9 @@ export function redo(
 
   if (!currentHistory || currentHistory.length === 0) return;
 
-  for (let i = currentHistory.length - 1; i >= 0; i--) {
+  for (let i = 0; i < currentHistory.length; i++) {
     const item = currentHistory[i];
-    if (item.deleted) {
+    if (item.deleted) {  
       const updated = [...currentHistory];
       updated[i] = { ...item, deleted: false };
       setHistory(updated);
