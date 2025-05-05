@@ -5,6 +5,7 @@ import * as Y from 'yjs';
 import simplify from 'simplify-js';
 import { getTransformedPointer } from '../../../utils/utils';
 import { History } from '../Canvas';
+import { smoothPathPoints } from '../../../utils/smoothPoints';
 
 export const PenTool: Tool = {
   create: (
@@ -64,7 +65,7 @@ export const PenTool: Tool = {
         yPoints.push([pointerPosition.x, pointerPosition.y]);
       });
 
-      updateObjectsFromYjs();
+      //updateObjectsFromYjs();
     };
     
     const handleMouseUp = () => {
@@ -100,7 +101,7 @@ export const PenTool: Tool = {
             yPoints.push(flattenedSimplified);
           });
           addToHistory(state);
-          updateObjectsFromYjs();
+          //updateObjectsFromYjs();
         }
       }
       
