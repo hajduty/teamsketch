@@ -1,5 +1,6 @@
 // tools/baseTool.ts
 import * as Y from "yjs";
+import { History } from "../Canvas";
 
 export interface Point {
   x: number;
@@ -30,6 +31,7 @@ export interface ToolHandlers {
   handleMouseUp: (e :any) => void;
   handleClick?: (e: any) => void;
   handleDblClick?: (e: any) => void;
+  handleSelect?: (e: any) => void;
 }
 
 export interface ToolOptions {
@@ -48,7 +50,10 @@ export interface Tool {
     currentState: { current: any },
     options: { current: ToolOptions },
     updateObjectsFromYjs: () => void,
-    activeTool: string
+    activeTool: string,
+    setSelectedId: (id: string) => void,
+    userId: string,
+    addToHistory: (state: History) => void,
   ) => ToolHandlers;
   
   processObjects: (objects: CanvasObject[]) => CanvasObject[];

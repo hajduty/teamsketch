@@ -2,7 +2,8 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Tool, ToolHandlers } from './baseTool';
 import * as Y from 'yjs';
-import { getTransformedPointer } from '../../../utils/optimizationUtils';
+import { getTransformedPointer } from '../../../utils/utils';
+import { History } from '../Canvas';
 
 export const TextTool: Tool = {
   create: (
@@ -12,29 +13,29 @@ export const TextTool: Tool = {
     _currentState: { current: any },
     options: { current: any },
     updateObjectsFromYjs: () => void,
-    activeTool: string
-  ): ToolHandlers => {    
+    activeTool: string,
+    _setSelectedId,
+    _userId,
+    addToHistory: (state: History) => void
+  ): ToolHandlers => {
+    const state: History = {
+      after: "", before: "", deleted: false, id: "",
+      historyId: '', operation: "create"
+    };
+
     const handleClick = (e: any) => {
       if (activeTool !== 'text') return;
 
       const clickedOnText = e.target.findAncestor('Text');
       
       Y.transact(yObjects.doc as Y.Doc, () => {
-        if (clickedOnText) {
-          const textId = clickedOnText.attrs.id;
-          yObjects.forEach((obj, id) => {
-            if (obj instanceof Y.Map) {
-              obj.set('selected', id === textId);
-            }
-          });
-        } else {
+        if (!clickedOnText) {
           yObjects.forEach((obj) => {
             if (obj instanceof Y.Map) {
               obj.set('selected', false);
             }
           });
-        }
-      });
+      }});
       
       updateObjectsFromYjs();
     };
@@ -63,6 +64,9 @@ export const TextTool: Tool = {
           rotation: 0
         };
 
+        state.after = textObj;
+        state.id = textObj.id;
+
         Y.transact(yObjects.doc as Y.Doc, () => {
           // Deselect all existing text objects
           yObjects.forEach((obj) => {
@@ -77,6 +81,7 @@ export const TextTool: Tool = {
             yTextObj.set(key, value);
           });
           yObjects.set(textObj.id, yTextObj);
+          addToHistory(state);
         });
 
         updateObjectsFromYjs();

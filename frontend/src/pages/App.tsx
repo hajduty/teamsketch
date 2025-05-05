@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import { Canvas, CanvasRef } from "../features/canvas/Canvas";
 import { Toolbar } from "../features/canvas/components/Toolbar";
 import { ToolOptions } from "../features/canvas/components/ToolOptions";
+import { HistoryButtons } from "../features/canvas/components/HistoryButtons";
 
 function App() {
   const [name, setName] = useState<string>("");
@@ -35,9 +36,10 @@ function App() {
 
   return (
     <>
+      <HistoryButtons canvasRef={canvasRef}/>
       <Toolbar tool={tool} setTool={setTool} />
       <ToolOptions tool={tool} canvasRef={canvasRef}/>
-      <div className="flex flex-row h-screen justify-center align-middle items-center justify-items-center bg-zinc-800 relative">
+      <div className="flex flex-row h-screen justify-center align-middle items-center justify-items-center bg-neutral-800 relative">
         <Canvas ref={canvasRef} name={name}/>
       </div>
     </>

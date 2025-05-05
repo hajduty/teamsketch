@@ -10,17 +10,33 @@ import { TextRender } from "./components/TextRender";
 import PenRender from "./components/PenRender";
 import { useIsDoubleClick } from "../../hooks/useIsDoubleClick";
 import { CursorsOverlay } from "./components/CursorOverlay";
-import { getTransformedPointer } from "../../utils/optimizationUtils";
+import { generateHistoryId, getTransformedPointer } from "../../utils/utils";
+import { SelectTool } from "./tools/selectTool";
+import { clearCanvas, undo, redo } from "./canvasActions";
 
 export interface CanvasRef {
   clearCanvas: () => void;
   setTool: (tool: string) => void;
   setOption: (key: string, value: any) => void;
+  historyState: History[];
+  historyIndex: number;
+  undo: () => void;
+  redo: () => void;
+}
+
+export interface History {
+  id: string;            // Object ID
+  historyId?: string;     // Unique history entry ID
+  before: any;           // State before change
+  after: any;            // State after change
+  deleted?: boolean;      // Whether this history entry has been undone
+  operation?: string;     // Type of change
 }
 
 const TOOLS: Record<string, Tool> = {
   pen: PenTool,
-  text: TextTool
+  text: TextTool,
+  select: SelectTool
 };
 
 const TOOLS_COMPONENTS: Record<string, FC<any>> = {
@@ -33,6 +49,10 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
   const [stageScale, setStageScale] = useState(1);
   const [stagePosition, setStagePosition] = useState({ x: 0, y: 0 });
   const [isSpacePressed, setIsSpacePressed] = useState(false);
+
+  const [history, setHistory] = useState<History[]>([]);
+  const historyRef = useRef<History[]>([]);
+  const historyIndexRef = useRef<number>(-1);
 
   const isDoubleClick = useIsDoubleClick(150);
   const { width, height } = useWindowDimensions();
@@ -51,11 +71,38 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
   const ydoc = useRef(new Y.Doc()).current;
   const yObjects = useRef(ydoc.getMap<any>("objects")).current;
   const providerRef = useRef<WebsocketProvider | null>(null);
-  const updateTimeoutRef = useRef<number | null>(null);
+  const awarenessRef = useRef<any>(null);
   const [otherCursors, setOtherCursors] = useState<AwarenessState[]>([]);
 
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  // Update historyRef whenever history state changes
+  useEffect(() => {
+    historyRef.current = history;
+  }, [history]);
+  
+  const addToHistory = (state: History) => {
+    const stateWithId = {
+      ...state,
+      historyId: state.historyId || generateHistoryId()
+    };
+
+    const trimmed = historyRef.current.slice(0, historyIndexRef.current + 1);
+    trimmed.push(state);
+    historyRef.current = trimmed;
+    historyIndexRef.current++;
+    console.log(state);
+    
+    setHistory(prev => {
+      const newHistory = [...prev, stateWithId];
+      return newHistory;
+    });
+    
+    const event = new CustomEvent('historyStateChange');
+    document.dispatchEvent(event);
+  };
+
   const updateObjectsFromYjs = useCallback(() => {
-    //console.log('Updating objects from Yjs');
     const allObjects: CanvasObject[] = [];
 
     yObjects.forEach((value, key) => {
@@ -79,32 +126,25 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
       { connect: true }
     );
 
-    const awareness = providerRef.current.awareness;
+    awarenessRef.current = providerRef.current.awareness;
 
-    awareness.setLocalState({
+    awarenessRef.current.setLocalState({
       userId: "your-user-id", // Replace dynamically if needed
       username: name,
       cursorPosition: { x: 0, y: 0 },
     });
 
-    // Listen for awareness updates
-    awareness.on('change', (changes: any) => {
-      const states = Array.from(awareness.getStates().values()) as AwarenessState[];
+    awarenessRef.current.on('change', (_changes: any) => {
+      const states = Array.from(awarenessRef.current.getStates().values()) as AwarenessState[];
       setOtherCursors(states.filter(s => s.username !== name));
     });
-
 
     yObjects.observeDeep(() => {
       updateObjectsFromYjs();
     });
 
-    updateObjectsFromYjs();
-
     return () => {
       providerRef.current?.disconnect();
-      if (updateTimeoutRef.current) {
-        window.clearTimeout(updateTimeoutRef.current);
-      }
     };
   }, [updateObjectsFromYjs, yObjects]);
 
@@ -122,21 +162,26 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
     currentState,
     toolOptions,
     updateObjectsFromYjs,
-    activeTool
+    activeTool,
+    setSelectedId,
+    awarenessRef.current?.getLocalState()?.username,
+    addToHistory
   );
 
   useImperativeHandle(ref, () => ({
-    clearCanvas: () => {
-      Y.transact(ydoc, () => {
-        yObjects.forEach((_, key) => yObjects.delete(key));
-      });
-    },
-    setTool: (tool: string) => {
-      setActiveTool(tool);
-    },
+    clearCanvas: () => clearCanvas(yObjects, ydoc),
+    setTool: (tool: string) => setActiveTool(tool),
     setOption: (key: string, value: any) => {
       toolOptions.current[key] = value;
-    }
+    },
+    get historyState() {
+      return historyRef.current;
+    },
+    get historyIndex() {
+      return historyIndexRef.current;
+    },
+    undo: () => undo(historyRef, setHistory, historyIndexRef, yObjects),
+    redo: () => redo(historyRef, setHistory, historyIndexRef, yObjects, ydoc),
   }));
 
   const wrappedHandleMouseMove = (e: any) => {
@@ -173,7 +218,6 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
       setIsSpacePressed(false);
     }
   }, []);
-
 
   const handleWheelZoom = useCallback((e: any) => {
     e.evt.preventDefault();
@@ -237,13 +281,16 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
           const ToolComponent = TOOLS_COMPONENTS[obj.type];
           return ToolComponent ? (
             <ToolComponent
-            key={obj.id}
-            obj={obj}
-            yObjects={yObjects}
-            toolOptions={toolOptions}
-            activeTool={activeTool}
-            updateObjectsFromYjs={updateObjectsFromYjs}
-            isSpacePressed={isSpacePressed}
+              key={obj.id}
+              obj={obj}
+              yObjects={yObjects}
+              toolOptions={toolOptions}
+              activeTool={activeTool}
+              updateObjectsFromYjs={updateObjectsFromYjs}
+              addToHistory={addToHistory}
+              isSpacePressed={isSpacePressed}
+              isSelected={selectedId === obj.id}
+              stageRef={stageRef}
             />
           ) : null;
         })}

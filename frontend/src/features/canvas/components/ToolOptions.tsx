@@ -101,8 +101,11 @@ export const ToolOptions = ({ tool, canvasRef }: { tool: string; canvasRef: Reac
 
   const ToolComponent = TOOL_OPTIONS[tool];
 
+  if (tool == "select")
+    return <></>
+
   return (
-    <div className="flex flex-col w-52 -translate-x-44 hover:translate-x-0 rounded-r-2xl bg-zinc-950 fixed min-h-72 h-auto top-1/2 -translate-y-1/2 left-0 z-3 transform duration-150 border-border border-1 text-white group">
+    <div className="flex flex-col w-52 -translate-x-44 hover:translate-x-0 rounded-r-2xl bg-neutral-950 fixed min-h-72 h-auto top-1/2 -translate-y-1/2 left-0 z-3 transform duration-150 border-border border-1 text-white group">
       <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150 text-white left-0 top-0">
         {ToolComponent ?
           <ToolComponent canvasRef={canvasRef} />

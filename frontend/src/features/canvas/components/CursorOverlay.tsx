@@ -19,17 +19,18 @@ const COLORS = [
 export const CursorsOverlay: FC<CursorsOverlayProps> = ({ cursors, scale }) => {
   return (
     <>
-      {cursors.map((cursor, index) => (
-        <Group key={cursor.userId} x={cursor.cursorPosition.x} y={cursor.cursorPosition.y}>
+      {cursors.map((cursor, _index) => (
+        <Group key={cursor.username} x={cursor.cursorPosition.x} y={cursor.cursorPosition.y}>
           <Circle
             radius={6 / scale}
-            fill={COLORS[index % COLORS.length]}
+            fill={COLORS[0]}
             stroke="white"
-            strokeWidth={1}
+            strokeWidth={1 / scale}
           />
           <Text
             text={cursor.username}
-            fontSize={14 / scale}
+            fontSize={Math.round(14 / scale)}
+            perfectDrawEnabled={true}
             fill="white"
             stroke="black"
             strokeWidth={0.5 / scale}
