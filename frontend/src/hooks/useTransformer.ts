@@ -91,7 +91,7 @@ export function useTransformer(
     state.current.id = shapeRef.current.attrs.id;
     state.current.after = {x: e.target.x(),y: e.target.y()};
     addToHistory(state.current);
-    console.log(shapeRef.current);
+    //console.log(shapeRef.current);
   }, [updateObject]);
 
   const preventDefault = useCallback((e: any) => {

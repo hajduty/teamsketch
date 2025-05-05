@@ -48,8 +48,9 @@ export const TextRender: React.FC<TextToolProps> = ({
     }
   }, [bindTransformer, isEditing]);
 
-  const handleTextDblClick = useCallback(() => {
+  const handleTextDblClick = useCallback((e:any) => {
     if (activeTool === "text") {
+      e.cancelBubble = true;
       setIsEditing(true);
     }
   }, [activeTool]);
@@ -88,7 +89,7 @@ export const TextRender: React.FC<TextToolProps> = ({
         fill={obj.color || toolOptions.current.color}
         width={obj.width || 200}
         rotation={obj.rotation || 0}
-        draggable={!isEditing}
+        draggable={!isEditing && obj.selected}
         onDragMove={handleDragMove}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}

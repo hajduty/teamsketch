@@ -54,7 +54,7 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
   const historyRef = useRef<History[]>([]);
   const historyIndexRef = useRef<number>(-1);
 
-  const isDoubleClick = useIsDoubleClick(150);
+  const isDoubleClick = useIsDoubleClick(200);
   const { width, height } = useWindowDimensions();
   const [objects, setObjects] = useState<CanvasObject[]>([]);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -91,7 +91,6 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
     trimmed.push(state);
     historyRef.current = trimmed;
     historyIndexRef.current++;
-    console.log(state);
 
     setHistory(prev => {
       const newHistory = [...prev, stateWithId];
