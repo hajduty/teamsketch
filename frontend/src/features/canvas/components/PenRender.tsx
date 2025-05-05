@@ -38,13 +38,15 @@ const PenRender: FC<PenRenderProps> = ({
   }, [bindTransformer]);
 
   if (!obj.points || !Array.isArray(obj.points)) return null;
+  //console.log("rerender" + obj.id);
+  const smoothPoints = smoothPathPoints(obj.points);
 
   return (
     <>
       <Line
         ref={shapeRef}
         id={obj.id}
-        points={obj.points}
+        points={smoothPoints}
         x={obj.x}
         y={obj.y}
         rotation={obj.rotation}

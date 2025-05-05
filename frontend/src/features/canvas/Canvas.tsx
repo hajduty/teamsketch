@@ -80,7 +80,7 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
   useEffect(() => {
     historyRef.current = history;
   }, [history]);
-  
+
   const addToHistory = (state: History) => {
     const stateWithId = {
       ...state,
@@ -92,19 +92,17 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
     historyRef.current = trimmed;
     historyIndexRef.current++;
     console.log(state);
-    
+
     setHistory(prev => {
       const newHistory = [...prev, stateWithId];
       return newHistory;
     });
-    
+
     const event = new CustomEvent('historyStateChange');
     document.dispatchEvent(event);
   };
-
   const updateObjectsFromYjs = useCallback(() => {
     const allObjects: CanvasObject[] = [];
-
     yObjects.forEach((value, key) => {
       if (value instanceof Y.Map) {
         const plain: any = { id: key };
@@ -196,10 +194,10 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
 
     const stage = stageRef.current;
     if (!stage || !providerRef.current) return;
-
+    
     const pointerPos = getTransformedPointer(stage);
     if (!pointerPos) return;
-
+    
     providerRef.current.awareness.setLocalStateField('cursorPosition', {
       x: pointerPos.x,
       y: pointerPos.y,

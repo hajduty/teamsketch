@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.0.6",
+    "fit-curve": "^0.2.0",
     "konva": "^9.3.20",
     "material-symbols": "^0.29.2",
     "react": "^19.0.0",
