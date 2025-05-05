@@ -1,23 +1,15 @@
-import simplify from 'simplify-js';
 import fitCurve from 'fit-curve';
-
-type Point = { x: number; y: number };
 
 export function smoothPathPoints(
   rawPoints: number[],         // Flat array: [x1, y1, x2, y2, ...]
-  simplifyTolerance = 1.0,     // Tolerance for simplifying before curve fit
-  bezierError = 10,            // Error tolerance for fit-curve
+  bezierError = 8,            // Error tolerance for fit-curve
   bezierSteps = 8              // Number of steps to sample each curve
 ): number[] {
-  // Convert flat to [{ x, y }]
-  const points: Point[] = [];
+  // Convert flat to [[x, y]]
+  const inputPoints: number[][] = [];
   for (let i = 0; i < rawPoints.length; i += 2) {
-    points.push({ x: rawPoints[i], y: rawPoints[i + 1] });
+    inputPoints.push([rawPoints[i], rawPoints[i + 1]]);
   }
-
-  // Optional simplify before fitting
-  const simplified = simplify(points, simplifyTolerance, false);
-  const inputPoints = simplified.map(p => [p.x, p.y]);
 
   // Fit bezier curves
   const curves = fitCurve(inputPoints, bezierError);

@@ -1,7 +1,6 @@
 // canvasActions.ts
 import * as Y from "yjs";
 import { History } from "./Canvas";
-import Konva from "konva";
 
 export function clearCanvas(yObjects: any, ydoc: any) {
   Y.transact(ydoc, () => {

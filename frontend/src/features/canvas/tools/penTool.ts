@@ -5,7 +5,6 @@ import * as Y from 'yjs';
 import simplify from 'simplify-js';
 import { getTransformedPointer } from '../../../utils/utils';
 import { History } from '../Canvas';
-import { smoothPathPoints } from '../../../utils/smoothPoints';
 
 export const PenTool: Tool = {
   create: (
