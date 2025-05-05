@@ -3,11 +3,11 @@
 realtime collab app using yjs
 
 ## todo:
-* canvas scrolling/panning
+* ~~canvas scrolling/panning~~
 * image pasting
-* tool properties (font, size, color etc)
+* ~~tool properties (font, size, color etc)~~
 * hotkey support (undo, redo, delete)
-* history support (redo, undo, view history)
+* ~~history support (redo, undo)~~
 * store canvas
 * canvas permissions
 * auth

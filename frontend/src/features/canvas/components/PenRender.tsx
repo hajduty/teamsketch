@@ -81,10 +81,12 @@ const PenRender: FC<PenRenderProps> = ({
 const areEqual = (prevProps: PenRenderProps, nextProps: PenRenderProps) => {
   return (
     prevProps.obj.id === nextProps.obj.id &&
-    prevProps.isSelected === nextProps.isSelected &&
+    prevProps.obj.selected === nextProps.obj.selected &&
     JSON.stringify(prevProps.obj.points) === JSON.stringify(nextProps.obj.points) &&
     prevProps.obj.color === nextProps.obj.color &&
-    prevProps.obj.strokeWidth === nextProps.obj.strokeWidth
+    prevProps.obj.strokeWidth === nextProps.obj.strokeWidth &&
+    prevProps.obj.x === nextProps.obj.x &&
+    prevProps.obj.y === nextProps.obj.y
   );
 };
 
