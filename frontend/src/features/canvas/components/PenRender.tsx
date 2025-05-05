@@ -4,6 +4,8 @@ import { CanvasObject } from "../tools/baseTool";
 import { useTransformer } from "../../../hooks/useTransformer";
 import * as Y from "yjs";
 import { History } from "../Canvas";
+import { smoothPathPoints } from "../../../utils/smoothPoints";
+import React from "react";
 
 interface PenRenderProps {
   obj: CanvasObject;
@@ -74,4 +76,14 @@ const PenRender: FC<PenRenderProps> = ({
   );
 };
 
-export default PenRender;
+const areEqual = (prevProps: PenRenderProps, nextProps: PenRenderProps) => {
+  return (
+    prevProps.obj.id === nextProps.obj.id &&
+    prevProps.isSelected === nextProps.isSelected &&
+    JSON.stringify(prevProps.obj.points) === JSON.stringify(nextProps.obj.points) &&
+    prevProps.obj.color === nextProps.obj.color &&
+    prevProps.obj.strokeWidth === nextProps.obj.strokeWidth
+  );
+};
+
+export default React.memo(PenRender, areEqual);

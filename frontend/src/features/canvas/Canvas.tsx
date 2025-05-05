@@ -115,8 +115,15 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
       }
     });
 
-    setObjects([...allObjects]);
-  }, [activeTool, yObjects]);
+    // Only update if objects actually changed
+    setObjects(prev => {
+      if (JSON.stringify(prev) !== JSON.stringify(allObjects)) {
+        return allObjects;
+      }
+      return prev;
+    });
+  }, [yObjects]);
+
 
   useEffect(() => {
     providerRef.current = new WebsocketProvider(
