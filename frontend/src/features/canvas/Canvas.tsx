@@ -101,6 +101,7 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
     const event = new CustomEvent('historyStateChange');
     document.dispatchEvent(event);
   };
+
   const updateObjectsFromYjs = useCallback(() => {
     const allObjects: CanvasObject[] = [];
     yObjects.forEach((value, key) => {
