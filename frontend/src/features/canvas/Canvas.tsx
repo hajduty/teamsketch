@@ -13,6 +13,7 @@ import { CursorsOverlay } from "./components/CursorOverlay";
 import { generateHistoryId, getTransformedPointer } from "../../utils/utils";
 import { SelectTool } from "./tools/selectTool";
 import { clearCanvas, undo, redo } from "./canvasActions";
+import InfiniteGrid from "./components/InfiniteGrid";
 
 export interface CanvasRef {
   clearCanvas: () => void;
@@ -281,6 +282,7 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
         }
       }}
     >
+      <InfiniteGrid stageRef={stageRef}/>
       <Layer>
         {objects.map((obj) => {
           const ToolComponent = TOOLS_COMPONENTS[obj.type];

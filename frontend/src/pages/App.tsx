@@ -3,6 +3,7 @@ import { Canvas, CanvasRef } from "../features/canvas/Canvas";
 import { Toolbar } from "../features/canvas/components/Toolbar";
 import { ToolOptions } from "../features/canvas/components/ToolOptions";
 import { HistoryButtons } from "../features/canvas/components/HistoryButtons";
+import FpsCounter from "../features/canvas/components/FpsCounter";
 
 function App() {
   const [name, setName] = useState<string>("");
@@ -39,6 +40,7 @@ function App() {
       <HistoryButtons canvasRef={canvasRef}/>
       <Toolbar tool={tool} setTool={setTool} />
       <ToolOptions tool={tool} canvasRef={canvasRef}/>
+      <FpsCounter />
       <div className="flex flex-row h-screen justify-center align-middle items-center justify-items-center bg-neutral-800 relative">
         <Canvas ref={canvasRef} name={name}/>
       </div>
