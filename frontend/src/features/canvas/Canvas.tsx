@@ -14,6 +14,7 @@ import { generateHistoryId, getTransformedPointer } from "../../utils/utils";
 import { SelectTool } from "./tools/selectTool";
 import { clearCanvas, undo, redo } from "./canvasActions";
 import InfiniteGrid from "./components/InfiniteGrid";
+import { useAuth } from "../auth/AuthProvider";
 
 export interface CanvasRef {
   clearCanvas: () => void;
@@ -77,6 +78,9 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
+  const { user } = useAuth();
+
+
   // Update historyRef whenever history state changes
   useEffect(() => {
     historyRef.current = history;
@@ -125,9 +129,12 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
 
 
   useEffect(() => {
+    const token = localStorage.getItem("token");
+    const roomName = "myRoom";
+
     providerRef.current = new WebsocketProvider(
-      "wss://localhost:5001/collaboration",
-      "ws",
+      `wss://localhost:5001/api/Room/collaboration/${roomName}/${token}`,
+      "", // e.g. "myroom"
       ydoc,
       { connect: true }
     );
@@ -135,9 +142,10 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
     awarenessRef.current = providerRef.current.awareness;
 
     awarenessRef.current.setLocalState({
-      userId: "your-user-id", // Replace dynamically if needed
+      userId: user?.id,
       username: name,
       cursorPosition: { x: 0, y: 0 },
+      role: ""
     });
 
     awarenessRef.current.on('change', (_changes: any) => {
@@ -195,10 +203,10 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
 
     const stage = stageRef.current;
     if (!stage || !providerRef.current) return;
-    
+
     const pointerPos = getTransformedPointer(stage);
     if (!pointerPos) return;
-    
+
     providerRef.current.awareness.setLocalStateField('cursorPosition', {
       x: pointerPos.x,
       y: pointerPos.y,
@@ -282,7 +290,7 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
         }
       }}
     >
-      <InfiniteGrid stageRef={stageRef}/>
+      <InfiniteGrid stageRef={stageRef} />
       <Layer>
         {objects.map((obj) => {
           const ToolComponent = TOOLS_COMPONENTS[obj.type];

@@ -10,7 +10,7 @@ const BASE_WIDTH = 100;
 const BASE_HEIGHT = 100;
 const CELL_LIMIT = 1000;
 
-const grid = [["#0a0a0a", "#111111"], ["#111111", "#0a0a0a"]];
+const grid = [["#111111", "#111111"], ["#111111", "#111111"]];
 
 const InfiniteGrid: FC<GridProps> = ({ stageRef }) => {
   const [gridCells, setGridCells] = useState<JSX.Element[]>([]);
