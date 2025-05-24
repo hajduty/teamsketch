@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, forwardRef, useImperativeHandle, FC, useCallback } from "react";
+import { useRef, useState, useEffect, forwardRef, useImperativeHandle, FC, useCallback, useMemo } from "react";
 import { Stage, Layer } from "react-konva";
 import useWindowDimensions from "../../hooks/useWindowDimensions";
 import * as Y from "yjs";
@@ -15,9 +15,7 @@ import { SelectTool } from "./tools/selectTool";
 import { clearCanvas, undo, redo } from "./canvasActions";
 import InfiniteGrid from "./components/InfiniteGrid";
 import { useAuth } from "../auth/AuthProvider";
-import apiClient from "../../lib/apiClient";
-import { apiRoutes } from "../../lib/apiRoutes";
-import { Permissions } from "../../types/permission";
+import { debounce } from 'lodash';
 
 export interface CanvasRef {
   clearCanvas: () => void;
@@ -202,6 +200,15 @@ export const Canvas = forwardRef<CanvasRef, { name: string, roomId: string, role
     redo: () => isToolsDisabled ? undefined : redo(historyRef, setHistory, historyIndexRef, yObjects, ydoc),
   }));
 
+  const debouncedSetCursor = useMemo(
+    () => debounce((x: number, y: number) => {
+      if (providerRef.current) {
+        providerRef.current.awareness.setLocalStateField('cursorPosition', { x, y });
+      }
+    }, 16),
+    []
+  );
+
   const wrappedHandleMouseMove = (e: any) => {
     if (isToolsDisabled) return;
 
@@ -213,10 +220,7 @@ export const Canvas = forwardRef<CanvasRef, { name: string, roomId: string, role
     const pointerPos = getTransformedPointer(stage);
     if (!pointerPos) return;
 
-    providerRef.current.awareness.setLocalStateField('cursorPosition', {
-      x: pointerPos.x,
-      y: pointerPos.y,
-    });
+    debouncedSetCursor(pointerPos.x, pointerPos.y);
   };
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
