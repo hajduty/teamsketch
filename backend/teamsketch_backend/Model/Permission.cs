@@ -10,7 +10,9 @@ namespace teamsketch_backend.Model
         [BsonRepresentation(BsonType.ObjectId)]
         public string Id { get; set; }
         [JsonPropertyName("userId")]
-        public string? UserId { get; set; }
+        public string UserId { get; set; }
+        [JsonPropertyName("userEmail")]
+        public string? UserEmail { get; set; }
         [JsonPropertyName("roomId")]
         public string? RoomId { get; set; }
         [JsonPropertyName("role")]

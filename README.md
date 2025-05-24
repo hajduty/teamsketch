@@ -8,7 +8,7 @@ realtime collab app using yjs
 * ~~tool properties (font, size, color etc)~~
 * hotkey support (undo, redo, delete)
 * ~~history support (redo, undo)~~
-* store canvas
-* canvas permissions
-* auth
-* rooms
+* ~~store canvas~~
+* ~~canvas permissions~~
+* ~~auth~~
+* ~~rooms~~

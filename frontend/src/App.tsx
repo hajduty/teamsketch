@@ -8,7 +8,7 @@ const App = () => {
   return (
     <Routes>
       <Route path="/login" element={<SignIn />} />
-      <Route path="/" element={<ProtectedRoute> <Canvas /> </ProtectedRoute>} />
+      <Route path="/:roomId" element={<ProtectedRoute> <Canvas /> </ProtectedRoute>} />
       <Route
         path="/canvas"
         element={<ProtectedRoute> <Canvas /> </ProtectedRoute>}

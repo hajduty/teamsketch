@@ -15,6 +15,9 @@ import { SelectTool } from "./tools/selectTool";
 import { clearCanvas, undo, redo } from "./canvasActions";
 import InfiniteGrid from "./components/InfiniteGrid";
 import { useAuth } from "../auth/AuthProvider";
+import apiClient from "../../lib/apiClient";
+import { apiRoutes } from "../../lib/apiRoutes";
+import { Permissions } from "../../types/permission";
 
 export interface CanvasRef {
   clearCanvas: () => void;
@@ -46,11 +49,12 @@ const TOOLS_COMPONENTS: Record<string, FC<any>> = {
   text: TextRender,
 };
 
-export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) => {
+export const Canvas = forwardRef<CanvasRef, { name: string, roomId: string, role: string }>(({ name, roomId, role }, ref) => {
   const stageRef = useRef<any>(null);
   const [stageScale, setStageScale] = useState(1);
   const [stagePosition, setStagePosition] = useState({ x: 0, y: 0 });
   const [isSpacePressed, setIsSpacePressed] = useState(false);
+  //const [role, setRole] = useState<string>("");
 
   const [history, setHistory] = useState<History[]>([]);
   const historyRef = useRef<History[]>([]);
@@ -80,6 +84,7 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
 
   const { user } = useAuth();
 
+  const isToolsDisabled = role === "none" || role === "viewer" || role === "";
 
   // Update historyRef whenever history state changes
   useEffect(() => {
@@ -127,16 +132,14 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
     });
   }, [yObjects]);
 
-
   useEffect(() => {
     const token = localStorage.getItem("token");
-    const roomName = "myRoom";
+    const roomName = roomId;
 
     providerRef.current = new WebsocketProvider(
       `wss://localhost:5001/api/Room/collaboration/${roomName}/${token}`,
-      "", // e.g. "myroom"
-      ydoc,
-      { connect: true }
+      "",
+      ydoc
     );
 
     awarenessRef.current = providerRef.current.awareness;
@@ -145,7 +148,6 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
       userId: user?.id,
       username: name,
       cursorPosition: { x: 0, y: 0 },
-      role: ""
     });
 
     awarenessRef.current.on('change', (_changes: any) => {
@@ -183,10 +185,12 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
   );
 
   useImperativeHandle(ref, () => ({
-    clearCanvas: () => clearCanvas(yObjects, ydoc),
-    setTool: (tool: string) => setActiveTool(tool),
+    clearCanvas: () => isToolsDisabled ? undefined : clearCanvas(yObjects, ydoc),
+    setTool: (tool: string) => isToolsDisabled ? undefined : setActiveTool(tool),
     setOption: (key: string, value: any) => {
-      toolOptions.current[key] = value;
+      if (!isToolsDisabled) {
+        toolOptions.current[key] = value;
+      }
     },
     get historyState() {
       return historyRef.current;
@@ -194,11 +198,13 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
     get historyIndex() {
       return historyIndexRef.current;
     },
-    undo: () => undo(historyRef, setHistory, historyIndexRef, yObjects),
-    redo: () => redo(historyRef, setHistory, historyIndexRef, yObjects, ydoc),
+    undo: () => isToolsDisabled ? undefined : undo(historyRef, setHistory, historyIndexRef, yObjects),
+    redo: () => isToolsDisabled ? undefined : redo(historyRef, setHistory, historyIndexRef, yObjects, ydoc),
   }));
 
   const wrappedHandleMouseMove = (e: any) => {
+    if (isToolsDisabled) return;
+
     handleMouseMove?.(e);
 
     const stage = stageRef.current;
@@ -280,12 +286,12 @@ export const Canvas = forwardRef<CanvasRef, { name: string }>(({ name }, ref) =>
       position={stagePosition}
       onWheel={handleWheelZoom}
       onDragEnd={handleStageDragEnd}
-      onMouseDown={!isSpacePressed ? handleMouseDown : undefined}
+      onMouseDown={!isSpacePressed && !isToolsDisabled ? handleMouseDown : undefined}
       onMouseMove={!isSpacePressed ? wrappedHandleMouseMove : undefined}
-      onMouseUp={!isSpacePressed ? handleMouseUp : undefined}
-      onClick={!isSpacePressed ? handleClick : undefined}
+      onMouseUp={!isSpacePressed && !isToolsDisabled ? handleMouseUp : undefined}
+      onClick={!isSpacePressed && !isToolsDisabled ? handleClick : undefined}
       onDblClick={(e) => {
-        if (!isSpacePressed && (isDoubleClick() && handleClick)) {
+        if (!isSpacePressed && !isToolsDisabled && (isDoubleClick() && handleClick)) {
           handleDblClick?.(e);
         }
       }}

@@ -4,22 +4,28 @@ using System.Text.Json;
 using teamsketch_backend.Model;
 using teamsketch_backend.Service;
 using YDotNet.Server;
+using teamsketch_backend.DTO;
+using YDotNet.Document.Cells;
+using YDotNet.Document;
+using System.Data;
 
 public sealed class Callback(ILogger<Callback> log, PermissionService permissionService, IHttpContextAccessor httpContextAccessor) : IDocumentCallback
 {
     private static readonly ConcurrentDictionary<ulong, string> ClientIdToUserId = new ConcurrentDictionary<ulong, string>();
+    private static readonly ConcurrentDictionary<ulong, bool> HasHandledFirstChange = new();
+    //private static readonly ConcurrentBag<ulong> ClientRolesToCleanup = new();
 
     public ValueTask OnDocumentLoadedAsync(DocumentLoadEvent @event)
     {
         log.LogInformation("Client joined - ClientId: {clientId}, DocumentName: {documentName}", @event.Context.ClientId, @event.Context.DocumentName);
 
-        // Don't register here if ClientId is 0 - wait for awareness update
+
         return default;
     }
 
     public ValueTask OnAwarenessUpdatedAsync(ClientAwarenessEvent @event)
     {
-        log.LogInformation("Awareness updated - ClientId: {clientId}", @event.Context.ClientId);
+        //log.LogInformation("Awareness updated - ClientId: {clientId}", @event.Context.ClientId);
 
         var clientStateJson = @event.ClientState;
         if (!string.IsNullOrEmpty(clientStateJson))
@@ -29,10 +35,7 @@ public sealed class Callback(ILogger<Callback> log, PermissionService permission
                 var clientState = JsonSerializer.Deserialize<ClientAwarenessState>(clientStateJson);
                 if (clientState?.UserId != null)
                 {
-
-                    var permission = permissionService.GetPermissionAsync(clientState.UserId, @event.Context.DocumentName).Result;
-                    clientState.Role = permission;
-                    @event.ClientState = JsonSerializer.Serialize(clientState);
+                    ClientIdToUserId[@event.Context.ClientId] = clientState.UserId;
                 }
             }
             catch (JsonException ex)
@@ -40,31 +43,86 @@ public sealed class Callback(ILogger<Callback> log, PermissionService permission
                 log.LogInformation(ex, "Failed to deserialize client awareness state JSON.");
             }
         }
-        return ValueTask.CompletedTask;
+        return default;
     }
 
     public async ValueTask OnDocumentChangedAsync(DocumentChangedEvent @event)
     {
-        log.LogInformation("Document changed - ClientId: {clientId}", @event.Context.ClientId);
+        var doc = @event.Document;
+        var rolesMap = doc.Map("roles");
+        var clientId = @event.Context.ClientId;
+        var userId = ClientIdToUserId.GetValueOrDefault(clientId);
 
-        var userId = ClientIdToUserId.GetValueOrDefault(@event.Context.ClientId);
+        var isFirstChange = !HasHandledFirstChange.ContainsKey(clientId);
+        HasHandledFirstChange[clientId] = true;
 
+        if (isFirstChange)
+        {
+            log.LogInformation("Skipping permission check for first sync change - ClientId: {clientId}", clientId);
+            return;
+        }
+
+        // Modifying document from backend not working?
+        // Handle cleanup first in separate transaction
+        //if (ClientRolesToCleanup.TryTake(out var clientIdToRemove))
+        //{
+        //    log.LogInformation("Trying to remove role for client {}", clientIdToRemove.ToString());
+        //
+        //    using (var cleanupTxn = doc.WriteTransaction())
+        //    {
+        //        if (rolesMap.Remove(cleanupTxn, clientIdToRemove.ToString()))
+        //        {
+        //            log.LogInformation("Removed role for disconnected ClientId: {clientId}", clientIdToRemove);
+        //        }
+        //        cleanupTxn.Commit();
+        //    }
+        //}
+
+        // Handle role setting in separate transaction
         if (userId != null)
         {
-            log.LogInformation("Document {documentName} changed by user {userId} (ClientId: {clientId})", @event.Context.DocumentName, userId, @event.Context.ClientId);
-
             var role = await permissionService.GetPermissionAsync(userId, @event.Context.DocumentName);
 
-            if (role == "none" || role == "viewer")
+            // Modifying document from backend not working?
+            //log.LogInformation("Setting role for user {userId} (ClientId: {clientId}) to role: {role}", userId, clientId, role);
+            //
+            //var ctx = new DocumentContext(@event.Context.DocumentName, ClientId: clientId);
+            //
+            //await @event.Source.UpdateDocAsync(ctx, roles =>
+            //{
+            //    using (var roleTxn = roles.WriteTransaction())
+            //    {
+            //        var roleMap = roles.Map("roles");
+            //        roleMap.Insert(roleTxn, userId.ToString(), Input.String(role));
+            //    }
+            //});
+
+            //using (var readTxn = doc.ReadTransaction())
+            //{
+            //    var storedValue = rolesMap.Get(readTxn, userId.ToString());
+            //    if (storedValue != null)
+            //    {
+            //        // Try to get the actual string value
+            //        log.LogInformation("Verification: Role stored for userId {clientId} is: {stringValue}", userId, storedValue.String);
+            //    }
+            //    else
+            //    {
+            //        log.LogInformation("Verification: No role found for userId {clientId}", userId);
+            //    }
+            //}
+
+
+            if (role != "owner" && role != "editor")
             {
-                log.LogCritical("User {userId} (ClientId: {clientId}) does not have permission to edit document {documentName}. DISCONNECTING!", userId, @event.Context.ClientId, @event.Context.DocumentName);
+                log.LogCritical("User {userId} (ClientId: {clientId}) does not have permission to edit document {documentName}. DISCONNECTING!", userId, clientId, @event.Context.DocumentName);
                 var httpContext = httpContextAccessor.HttpContext;
                 httpContext!.Abort();
+                await permissionService.InternalDeletePermissionByIdAsync(userId, @event.Context.DocumentName);
             }
         }
         else
         {
-            log.LogWarning("Document {documentName} changed by unknown client {clientId}.", @event.Context.DocumentName, @event.Context.ClientId);
+            log.LogWarning("Document {documentName} changed by unknown client {clientId}.", @event.Context.DocumentName, clientId);
         }
     }
 
@@ -72,6 +130,7 @@ public sealed class Callback(ILogger<Callback> log, PermissionService permission
     {
         var clientId = @event.Context.ClientId;
         log.LogInformation("Client disconnecting - ClientId: {clientId}", clientId);
+        //ClientRolesToCleanup.Add(clientId);
 
         if (ClientIdToUserId.TryRemove(clientId, out var userId))
         {
@@ -82,7 +141,15 @@ public sealed class Callback(ILogger<Callback> log, PermissionService permission
             log.LogInformation("Client {clientId} disconnected, but no userId was found in cache.", clientId);
         }
 
-        return ValueTask.CompletedTask;
+        if (HasHandledFirstChange.TryRemove(clientId, out var test))
+        {
+            log.LogInformation("Removed firstChange bool");
+        } else
+        {
+            log.LogInformation("tried removing but no success");
+        }
+
+        return default;
     }
 
     public sealed class Notification

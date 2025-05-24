@@ -26,9 +26,10 @@ namespace teamsketch_backend
             builder.Services.AddMemoryCache();
 
             builder.Services.AddSingleton<DbContext>();
-            builder.Services.AddSingleton<PermissionService>();
             builder.Services.AddSingleton<TokenService>();
             builder.Services.AddSingleton<UserService>();
+            builder.Services.AddSingleton<RoomMetadataService>();
+            builder.Services.AddSingleton<PermissionService>();
 
             var config = builder.Configuration;
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -86,6 +87,14 @@ namespace teamsketch_backend
                         builder.WithOrigins("http://localhost:5173")
                                .AllowAnyHeader()
                                .AllowAnyMethod();
+                    });
+
+                options.AddPolicy("NoCredentials", 
+                    builder =>
+                    {
+                        builder.WithOrigins("http://localhost:5173")
+                          .AllowAnyHeader()
+                          .AllowAnyMethod();
                     });
             });
 

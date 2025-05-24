@@ -6,8 +6,6 @@ namespace teamsketch_backend.Model
     {
         [JsonPropertyName("userId")]
         public string? UserId { get; set; }
-        [JsonPropertyName("role")]
-        public string? Role { get; set; }
         [JsonPropertyName("username")]
         public string? Username { get; set; }
         [JsonPropertyName("cursorPosition")]

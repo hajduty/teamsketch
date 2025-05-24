@@ -8,4 +8,10 @@ export const apiRoutes = {
   room: {
     collaboration: (roomName: string) => `${BASE_URL}/room/collaboration/${roomName}`,
   },
+  permission: {
+    add: `${BASE_URL}/room/permission`,
+    remove: `${BASE_URL}/room/permission`,
+    edit: `${BASE_URL}/room/permission`,
+    getByRoom: (roomId: string) => `${BASE_URL}/room/permission/${roomId}`,
+  }
 };

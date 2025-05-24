@@ -15,6 +15,7 @@ namespace teamsketch_backend.Data
         }
 
         public IMongoCollection<User> Users => _database.GetCollection<User>("users");
+        public IMongoCollection<RoomMetadata> RoomMetadata => _database.GetCollection<RoomMetadata>("roomMetadata");
         public IMongoCollection<Permission> Permissions => _database.GetCollection<Permission>("permissions");
 
         private void CreateIndexes()

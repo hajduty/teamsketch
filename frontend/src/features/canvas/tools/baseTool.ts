@@ -23,6 +23,7 @@ export interface AwarenessState {
     x: number;
     y: number;
   };
+  role: string;
 }
 
 export interface ToolHandlers {
