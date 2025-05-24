@@ -13,5 +13,6 @@ export const apiRoutes = {
     remove: `${BASE_URL}/room/permission`,
     edit: `${BASE_URL}/room/permission`,
     getByRoom: (roomId: string) => `${BASE_URL}/room/permission/${roomId}`,
+    getMyRooms: `${BASE_URL}/room/permission`
   }
 };

@@ -99,9 +99,9 @@ export const ShareCanvas = ({ roomId }: { roomId: any }) => {
 
   return (
     <div className="fixed top-0 right-0 m-6 z-10">
-      <Button onClick={() => setIsModalOpen(true)}>
+      <button onClick={() => setIsModalOpen(true)} className="p-2 bg-blue-500 border border-neutral-700 rounded-md flex hover:bg-blue-600 transition duration-150">
         <Icon iconName="share" color="white" />
-      </Button>
+      </button>
 
       {isModalOpen && (
         <div
@@ -109,7 +109,7 @@ export const ShareCanvas = ({ roomId }: { roomId: any }) => {
           onClick={onBackdropClick} // click on backdrop closes modal
         >
           <div
-            className="bg-neutral-900 text-white rounded-md p-5 w-auto max-h-[85vh] overflow-y-auto border border-neutral-700 flex flex-col gap-4 shadow-lg"
+            className="bg-neutral-950 text-white rounded-md p-5 w-auto max-h-[85vh] overflow-y-auto border border-neutral-700 flex flex-col gap-4 shadow-lg"
             onClick={(e) => e.stopPropagation()} // prevent closing when clicking inside modal
           >
             <span className="flex flex-row justify-between align-middle items-center justify-items-center mb-4">
@@ -117,7 +117,7 @@ export const ShareCanvas = ({ roomId }: { roomId: any }) => {
               <div>
                 <Button
                   onClick={() => setIsModalOpen(false)}
-                  className="hover:bg-zinc-700 border border-transparent p-1 rounded-md"
+                  className="hover:bg-neutral-700 border border-transparent p-1 rounded-md"
                 >
                   <Icon iconName="close" color="white" fontSize="16px"></Icon>
                 </Button>
@@ -129,13 +129,13 @@ export const ShareCanvas = ({ roomId }: { roomId: any }) => {
                 placeholder="User email"
                 value={userEmail}
                 onChange={(e) => setUserEmail(e.target.value)}
-                className="flex-1 rounded border border-neutral-600 bg-neutral-800 px-3 py-2 placeholder:text-neutral-400 text-white focus:outline-none"
+                className="flex-1 rounded border border-neutral-600 bg-neutral-950 px-3 py-2 placeholder:text-neutral-400 text-white focus:outline-none"
               />
 
               <select
                 value={selectedRole}
                 onChange={(e) => setSelectedRole(e.target.value)}
-                className="rounded border border-neutral-600 bg-neutral-800 px-2 py-2 text-white focus:outline-none"
+                className="rounded border border-neutral-600 bg-neutral-950 px-2 py-2 text-white focus:outline-none"
               >
                 <option value="viewer">Viewer</option>
                 <option value="editor">Editor</option>

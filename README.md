@@ -1,5 +1,5 @@
 # teamsketch
-![image](https://github.com/user-attachments/assets/002cf25e-b67d-4abf-9d63-6e82c2429d46)
+![image](https://github.com/user-attachments/assets/18ff0f36-1cea-43a9-a615-3ab158cfc575)
 realtime collab app using yjs
 
 ## todo:

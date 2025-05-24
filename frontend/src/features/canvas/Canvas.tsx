@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, forwardRef, useImperativeHandle, FC, useCallback } from "react";
+import { useRef, useState, useEffect, forwardRef, useImperativeHandle, FC, useCallback, useMemo } from "react";
 import { Stage, Layer } from "react-konva";
 import useWindowDimensions from "../../hooks/useWindowDimensions";
 import * as Y from "yjs";
@@ -15,8 +15,7 @@ import { SelectTool } from "./tools/selectTool";
 import { clearCanvas, undo, redo } from "./canvasActions";
 import InfiniteGrid from "./components/InfiniteGrid";
 import { useAuth } from "../auth/AuthProvider";
-import apiClient from "../../lib/apiClient";
-import { apiRoutes } from "../../lib/apiRoutes";
+import { debounce } from 'lodash';
 import { Permissions } from "../../types/permission";
 
 export interface CanvasRef {
@@ -49,7 +48,7 @@ const TOOLS_COMPONENTS: Record<string, FC<any>> = {
   text: TextRender,
 };
 
-export const Canvas = forwardRef<CanvasRef, { name: string, roomId: string, role: string }>(({ name, roomId, role }, ref) => {
+export const Canvas = forwardRef<CanvasRef, { roomId: string, role?: string }>(({ roomId, role }, ref) => {
   const stageRef = useRef<any>(null);
   const [stageScale, setStageScale] = useState(1);
   const [stagePosition, setStagePosition] = useState({ x: 0, y: 0 });
@@ -146,13 +145,13 @@ export const Canvas = forwardRef<CanvasRef, { name: string, roomId: string, role
 
     awarenessRef.current.setLocalState({
       userId: user?.id,
-      username: name,
+      username: user?.email,
       cursorPosition: { x: 0, y: 0 },
     });
 
     awarenessRef.current.on('change', (_changes: any) => {
       const states = Array.from(awarenessRef.current.getStates().values()) as AwarenessState[];
-      setOtherCursors(states.filter(s => s.username !== name));
+      setOtherCursors(states.filter(s => s.username !== user?.email));
     });
 
     yObjects.observeDeep(() => {
@@ -202,6 +201,15 @@ export const Canvas = forwardRef<CanvasRef, { name: string, roomId: string, role
     redo: () => isToolsDisabled ? undefined : redo(historyRef, setHistory, historyIndexRef, yObjects, ydoc),
   }));
 
+  const debouncedSetCursor = useMemo(
+    () => debounce((x: number, y: number) => {
+      if (providerRef.current) {
+        providerRef.current.awareness.setLocalStateField('cursorPosition', { x, y });
+      }
+    }, 16),
+    []
+  );
+
   const wrappedHandleMouseMove = (e: any) => {
     if (isToolsDisabled) return;
 
@@ -213,10 +221,7 @@ export const Canvas = forwardRef<CanvasRef, { name: string, roomId: string, role
     const pointerPos = getTransformedPointer(stage);
     if (!pointerPos) return;
 
-    providerRef.current.awareness.setLocalStateField('cursorPosition', {
-      x: pointerPos.x,
-      y: pointerPos.y,
-    });
+    debouncedSetCursor(pointerPos.x, pointerPos.y);
   };
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
