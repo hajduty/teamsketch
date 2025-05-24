@@ -10,16 +10,14 @@ import { useAuth } from "../features/auth/AuthProvider";
 import apiClient from "../lib/apiClient";
 import { apiRoutes } from "../lib/apiRoutes";
 import { Permissions } from "../types/permission";
+import { CanvasList } from "../features/canvas/components/CanvasList";
 
 function App() {
   const { roomId } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const [role, setRole] = useState<string>("");
-  const [name, setName] = useState<string>("");
-  const [enteredName, setEnteredName] = useState<boolean>(false);
-
+  const [permission, setPermission] = useState<Permissions>();
   const canvasRef = useRef<CanvasRef>(null);
   const [tool, setTool] = useState<string>("pen");
   const [permissions, setPermissions] = useState<Permissions[]>([]);
@@ -48,7 +46,7 @@ function App() {
       // Find permission for the current user
       const myPermission = data.find(p => p.userEmail === user.email);
       if (myPermission) {
-        setRole(myPermission.role);
+        setPermission(myPermission);
         //console.log("OUR ROLE IS", myPermission.role);
       }
     } catch (err: any) {
@@ -70,45 +68,18 @@ function App() {
     };
   }, [roomId]);
 
-  if (!enteredName) {
-    return (
-      <div className="bg-white-900 mt-16">
-        <div className="pt-44 text-center h-72 flex flex-col gap-2">
-          <h1 className="text-5xl text-center select-none">TeamSketch</h1>
-          <p className="text-sm font-light text-center select-none">Real-time sketch collaboration</p>
-        </div>
-        <div className="flex flex-row h-60 justify-center items-center gap-2 font-light">
-          <input
-            type="text"
-            placeholder="Display name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="rounded-sm decoration-0 outline-0 text-black p-2 border-2 border-gray-950"
-          />
-          <button
-            type="button"
-            className="px-4 p-2 rounded-md bg-black cursor-pointer text-white"
-            onClick={() => setEnteredName(true)}
-          >
-            Start
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <>
-      {role != "viewer" && <>
+      {permission?.role != "viewer" && <>
         <HistoryButtons canvasRef={canvasRef} />
         <Toolbar tool={tool} setTool={setTool} />
         <ToolOptions tool={tool} canvasRef={canvasRef} />
         <ShareCanvas roomId={roomId!} />
-        <FpsCounter />
       </>
       }
+      <CanvasList/>
       <div className="flex flex-row h-screen justify-center items-center bg-neutral-800 relative">
-        <Canvas ref={canvasRef} name={name} roomId={roomId!} role={role} />
+        <Canvas ref={canvasRef} roomId={roomId!} role={permission?.role}/>
       </div>
     </>
   );

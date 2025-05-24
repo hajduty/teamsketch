@@ -1,4 +1,7 @@
 // tools/penTool.ts
+// TODO: Debounce pen updates.
+
+
 import { v4 as uuidv4 } from 'uuid';
 import { Tool, ToolHandlers, ToolOptions } from './baseTool';
 import * as Y from 'yjs';

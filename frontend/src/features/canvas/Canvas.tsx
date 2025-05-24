@@ -16,6 +16,7 @@ import { clearCanvas, undo, redo } from "./canvasActions";
 import InfiniteGrid from "./components/InfiniteGrid";
 import { useAuth } from "../auth/AuthProvider";
 import { debounce } from 'lodash';
+import { Permissions } from "../../types/permission";
 
 export interface CanvasRef {
   clearCanvas: () => void;
@@ -47,7 +48,7 @@ const TOOLS_COMPONENTS: Record<string, FC<any>> = {
   text: TextRender,
 };
 
-export const Canvas = forwardRef<CanvasRef, { name: string, roomId: string, role: string }>(({ name, roomId, role }, ref) => {
+export const Canvas = forwardRef<CanvasRef, { roomId: string, role?: string }>(({ roomId, role }, ref) => {
   const stageRef = useRef<any>(null);
   const [stageScale, setStageScale] = useState(1);
   const [stagePosition, setStagePosition] = useState({ x: 0, y: 0 });
@@ -144,13 +145,13 @@ export const Canvas = forwardRef<CanvasRef, { name: string, roomId: string, role
 
     awarenessRef.current.setLocalState({
       userId: user?.id,
-      username: name,
+      username: user?.email,
       cursorPosition: { x: 0, y: 0 },
     });
 
     awarenessRef.current.on('change', (_changes: any) => {
       const states = Array.from(awarenessRef.current.getStates().values()) as AwarenessState[];
-      setOtherCursors(states.filter(s => s.username !== name));
+      setOtherCursors(states.filter(s => s.username !== user?.email));
     });
 
     yObjects.observeDeep(() => {
