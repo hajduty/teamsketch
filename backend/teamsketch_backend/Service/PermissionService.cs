@@ -302,6 +302,20 @@ namespace teamsketch_backend.Service
             }
         }
 
+        public async Task<List<Permission>> GetRoomsForUser(string id)
+        {
+            try
+            {
+                var rooms = await _permissions.Find(r => r.UserId == id).ToListAsync();
+
+                return rooms;
+            }
+            catch (Exception ex)
+            {
+                throw new FileNotFoundException($"ERROR: GetRoomsForUser failed: {ex.Message}");
+            }
+        }
+
         private async Task EnsureRoomOwnershipAsync(string roomId, string currentUserId)
         {
             try
