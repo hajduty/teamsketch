@@ -1,0 +1,224 @@
+import { useState, useEffect } from "react";
+import { Button } from "../../../components/Button";
+import Icon from "../../../components/Icon";
+import { apiRoutes } from "../../../lib/apiRoutes";
+import apiClient from "../../../lib/apiClient";
+
+interface Permission {
+  userEmail: string;
+  role: string;
+  roomId: string;
+}
+
+export const ShareCanvas = ({ roomId }: { roomId: any }) => {
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [userEmail, setUserEmail] = useState<string>("");
+  const [selectedRole, setSelectedRole] = useState<string>("viewer");
+  const [permissions, setPermissions] = useState<Permission[]>([]);
+  const [error, setError] = useState<string>("");
+  const [successMessage, setSuccessMessage] = useState<string>("");
+  const [isAccordionOpen, setIsAccordionOpen] = useState<boolean>(false);
+
+  const fetchPermissions = async () => {
+    if (!roomId) return;
+    try {
+      const response = await apiClient.get(apiRoutes.permission.getByRoom(roomId));
+      setPermissions(response.data);
+      setError("");
+    } catch (err: any) {
+      console.error("Fetch permissions failed", err);
+      setError("Failed to fetch permissions");
+    }
+  };
+
+  const updateUserRole = async (userEmail: string, newRole: string) => {
+    const permissionToUpdate = permissions.find((p) => p.userEmail === userEmail);
+    if (!permissionToUpdate) return;
+
+    const updatedPermission = { ...permissionToUpdate, role: newRole };
+
+    try {
+      await apiClient.put(apiRoutes.permission.edit, updatedPermission);
+      setPermissions((prev) =>
+        prev.map((p) =>
+          p.userEmail === userEmail ? { ...p, role: newRole } : p
+        )
+      );
+    } catch (err: any) {
+      console.error("Edit user role failed", err);
+      setError("Failed to update user role");
+    }
+  };
+
+  const addUser = async () => {
+    if (!userEmail || !roomId) return;
+    try {
+      await apiClient.post(apiRoutes.permission.add, {
+        userEmail,
+        roomId,
+        role: selectedRole,
+      });
+      setUserEmail("");
+      setSuccessMessage("All done! Send this link to your friend:");
+      await fetchPermissions();
+    } catch (err: any) {
+      console.error("Add user failed", err);
+      setError("Failed to add user");
+    }
+  };
+
+  const deleteUser = async (permission: Permission) => {
+    try {
+      await apiClient.delete(apiRoutes.permission.remove, { data: permission });
+      setPermissions((prev) =>
+        prev.filter((p) => p.userEmail !== permission.userEmail)
+      );
+    } catch (err: any) {
+      console.error("Delete user failed", err);
+      setError("Failed to delete user");
+    }
+  };
+
+  const copyToClipboard = () => {
+    const link = `${window.location.origin}/room/${roomId}`;
+    navigator.clipboard.writeText(link);
+    setSuccessMessage("Copied!");
+  };
+
+  const onBackdropClick = () => {
+    setIsModalOpen(false);
+    setError("");
+    setSuccessMessage("");
+  };
+
+  useEffect(() => {
+    if (isModalOpen && roomId) {
+      fetchPermissions();
+    }
+  }, [isModalOpen, roomId]);
+
+  return (
+    <div className="fixed top-0 right-0 m-6 z-10">
+      <Button onClick={() => setIsModalOpen(true)}>
+        <Icon iconName="share" color="white" />
+      </Button>
+
+      {isModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          onClick={onBackdropClick} // click on backdrop closes modal
+        >
+          <div
+            className="bg-neutral-900 text-white rounded-md p-5 w-auto max-h-[85vh] overflow-y-auto border border-neutral-700 flex flex-col gap-4 shadow-lg"
+            onClick={(e) => e.stopPropagation()} // prevent closing when clicking inside modal
+          >
+            <span className="flex flex-row justify-between align-middle items-center justify-items-center mb-4">
+              <h2 className="text-lg font-semibold">Share Canvas</h2>
+              <div>
+                <Button
+                  onClick={() => setIsModalOpen(false)}
+                  className="hover:bg-zinc-700 border border-transparent p-1 rounded-md"
+                >
+                  <Icon iconName="close" color="white" fontSize="16px"></Icon>
+                </Button>
+              </div>
+
+            </span>
+            <div className="flex gap-2 mb-3">
+              <input
+                placeholder="User email"
+                value={userEmail}
+                onChange={(e) => setUserEmail(e.target.value)}
+                className="flex-1 rounded border border-neutral-600 bg-neutral-800 px-3 py-2 placeholder:text-neutral-400 text-white focus:outline-none"
+              />
+
+              <select
+                value={selectedRole}
+                onChange={(e) => setSelectedRole(e.target.value)}
+                className="rounded border border-neutral-600 bg-neutral-800 px-2 py-2 text-white focus:outline-none"
+              >
+                <option value="viewer">Viewer</option>
+                <option value="editor">Editor</option>
+              </select>
+
+              <Button
+                onClick={addUser}
+                className="rounded-sm text-white px-3 py-1 gap-1 bg-blue-500"
+              >
+                <Icon iconName="add" color="white" />
+                Add
+              </Button>
+
+            </div>
+
+            {error && <p className="text-red-500 text-sm">{error}</p>}
+
+            {successMessage && (
+              <div className="bg-green-800 text-green-300 p-2 rounded flex flex-col gap-1 text-sm">
+                <p>{successMessage}</p>
+                <div className="flex items-center gap-2">
+                  <input
+                    readOnly
+                    className="bg-neutral-800 text-white px-2 py-1 border border-neutral-600 flex-1 rounded"
+                    value={`${window.location.origin}/room/${roomId}`}
+                  />
+                  <Button onClick={copyToClipboard} className="hover:bg-green-200 rounded-sm">
+                    Copy
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            <div>
+              <h3
+                className="font-semibold mb-2 cursor-pointer flex items-center gap-1 select-none"
+                onClick={() => setIsAccordionOpen((prev) => !prev)}
+              >
+                <Icon
+                  iconName={isAccordionOpen ? "expand_less" : "expand_more"}
+                  color="white"
+                />
+                Users with Access
+              </h3>
+
+              <div
+                className={`transition-max-height duration-300 ease-in-out overflow-hidden ${isAccordionOpen ? "max-h-56" : "max-h-0"
+                  }`}
+              >
+                <ul className="text-sm">
+                  {permissions.map((perm) => (
+                    <li
+                      key={perm.userEmail}
+                      className="flex justify-between items-center border rounded-sm p-2 border-neutral-700 my-3"
+                    >
+                      <span className="flex gap-2 items-center">
+                        {perm.userEmail}
+                        {perm.role != "owner" &&
+                          <select
+                            value={perm.role}
+                            onChange={(e) => updateUserRole(perm.userEmail, e.target.value)}
+                            className="bg-neutral-800 border border-neutral-600 text-white rounded px-2 py-1 text-sm"
+                          >
+                            <option value="viewer">Viewer</option>
+                            <option value="editor">Editor</option>
+                          </select>
+                        }
+                      </span>
+                      
+                      {perm.role != "owner" &&
+                        <button onClick={() => deleteUser(perm)} className="border-neutral-700 border hover:bg-neutral-950 flex rounded-sm px-1 py-1 text-sm ">
+                        <Icon iconName="delete" color="red" />
+                      </button>
+                      }
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+};

@@ -1,113 +1,160 @@
-﻿using System.Text.Json.Serialization;
-using YDotNet.Document.Types.Events;
-using YDotNet.Extensions;
+﻿using System.Collections.Concurrent;
+using System.Text.Json.Serialization;
+using System.Text.Json;
+using teamsketch_backend.Model;
+using teamsketch_backend.Service;
 using YDotNet.Server;
+using teamsketch_backend.DTO;
+using YDotNet.Document.Cells;
+using YDotNet.Document;
+using System.Data;
 
-namespace teamsketch_backend
+public sealed class Callback(ILogger<Callback> log, PermissionService permissionService, IHttpContextAccessor httpContextAccessor) : IDocumentCallback
 {
-    public sealed class Callback(ILogger<Callback> log) : IDocumentCallback
+    private static readonly ConcurrentDictionary<ulong, string> ClientIdToUserId = new ConcurrentDictionary<ulong, string>();
+    private static readonly ConcurrentDictionary<ulong, bool> HasHandledFirstChange = new();
+    //private static readonly ConcurrentBag<ulong> ClientRolesToCleanup = new();
+
+    public ValueTask OnDocumentLoadedAsync(DocumentLoadEvent @event)
     {
-        public ValueTask OnAwarenessUpdatedAsync(ClientAwarenessEvent @event)
-        {
-            log.LogInformation("Client {clientId} awareness changed.", @event.Context.ClientId);
-            return default;
-        }
+        log.LogInformation("Client joined - ClientId: {clientId}, DocumentName: {documentName}", @event.Context.ClientId, @event.Context.DocumentName);
 
-        public ValueTask OnClientDisconnectedAsync(ClientDisconnectedEvent @event)
-        {
-            log.LogInformation("Client {clientId} disconnected.", @event.Context.ClientId);
-            return default;
-        }
 
-        public ValueTask OnDocumentLoadedAsync(DocumentLoadEvent @event)
+        return default;
+    }
+
+    public ValueTask OnAwarenessUpdatedAsync(ClientAwarenessEvent @event)
+    {
+        //log.LogInformation("Awareness updated - ClientId: {clientId}", @event.Context.ClientId);
+
+        var clientStateJson = @event.ClientState;
+        if (!string.IsNullOrEmpty(clientStateJson))
         {
-            if (@event.Context.DocumentName == "notifications")
+            try
             {
-                return default;
+                var clientState = JsonSerializer.Deserialize<ClientAwarenessState>(clientStateJson);
+                if (clientState?.UserId != null)
+                {
+                    ClientIdToUserId[@event.Context.ClientId] = clientState.UserId;
+                }
             }
-
-            var map = @event.Document.Map("increment");
-
-            map?.ObserveDeep(
-                changes =>
-                {
-                    foreach (var change in changes)
-                    {
-                        var key = change.MapEvent?.Keys.FirstOrDefault(
-                            x => x.Key == "value" && x.Tag != EventKeyChangeTag.Remove);
-
-                        if (key != null)
-                        {
-                            var valueOld = key.OldValue?.Double;
-                            var valueNew = key.NewValue?.Double;
-
-                            if (valueOld == valueNew)
-                            {
-                                continue;
-                            }
-
-                            log.LogInformation("Counter updated from {oldValue} to {newValue}.", valueOld, valueNew);
-                        }
-                    }
-                });
-
-            var chat = @event.Document.Array("stream");
-
-            chat?.ObserveDeep(
-                async changes =>
-                {
-                    var newNotificationsRaw =
-                        changes
-                            .Where(x => x.Tag == EventBranchTag.Array)
-                            .Select(x => x.ArrayEvent)
-                            .SelectMany(x => x.Delta.Where(x => x.Tag == EventChangeTag.Add))
-                            .SelectMany(x => x.Values)
-                            .ToArray();
-
-                    if (newNotificationsRaw.Length == 0)
-                    {
-                        return;
-                    }
-
-                    await Task.Delay(millisecondsDelay: 100);
-
-                    var notificationCtx = new DocumentContext("notifications", ClientId: 0);
-
-                    await @event.Source.UpdateDocAsync(
-                        notificationCtx, doc =>
-                        {
-                            List<Notification> notifications;
-
-                            // Keep the transaction open as short as possible.
-                            using (var transaction = @event.Document.ReadTransaction())
-                            {
-                                notifications = newNotificationsRaw.Select(x => x.To<Notification>(transaction)).ToList();
-                            }
-
-                            var array = doc.Array("stream");
-
-                            notifications = notifications.Select(
-                                    x => new Notification { Text = $"You got the follow message: {x.Text}" })
-                                .ToList();
-
-                            // Keep the transaction open as short as possible.
-                            using (var transaction = doc.WriteTransaction())
-                            {
-                                array.InsertRange(
-                                    transaction, array.Length(transaction),
-                                    notifications.Select(x => x.ToInput()).ToArray());
-                            }
-                        });
-                });
-
-
-            return default;
+            catch (JsonException ex)
+            {
+                log.LogInformation(ex, "Failed to deserialize client awareness state JSON.");
+            }
         }
+        return default;
+    }
 
-        public sealed class Notification
+    public async ValueTask OnDocumentChangedAsync(DocumentChangedEvent @event)
+    {
+        var doc = @event.Document;
+        var rolesMap = doc.Map("roles");
+        var clientId = @event.Context.ClientId;
+        var userId = ClientIdToUserId.GetValueOrDefault(clientId);
+
+        var isFirstChange = !HasHandledFirstChange.ContainsKey(clientId);
+        HasHandledFirstChange[clientId] = true;
+
+        if (isFirstChange)
         {
-            [JsonPropertyName("text")]
-            public string? Text { get; set; }
+            log.LogInformation("Skipping permission check for first sync change - ClientId: {clientId}", clientId);
+            return;
         }
+
+        // Modifying document from backend not working?
+        // Handle cleanup first in separate transaction
+        //if (ClientRolesToCleanup.TryTake(out var clientIdToRemove))
+        //{
+        //    log.LogInformation("Trying to remove role for client {}", clientIdToRemove.ToString());
+        //
+        //    using (var cleanupTxn = doc.WriteTransaction())
+        //    {
+        //        if (rolesMap.Remove(cleanupTxn, clientIdToRemove.ToString()))
+        //        {
+        //            log.LogInformation("Removed role for disconnected ClientId: {clientId}", clientIdToRemove);
+        //        }
+        //        cleanupTxn.Commit();
+        //    }
+        //}
+
+        // Handle role setting in separate transaction
+        if (userId != null)
+        {
+            var role = await permissionService.GetPermissionAsync(userId, @event.Context.DocumentName);
+
+            // Modifying document from backend not working?
+            //log.LogInformation("Setting role for user {userId} (ClientId: {clientId}) to role: {role}", userId, clientId, role);
+            //
+            //var ctx = new DocumentContext(@event.Context.DocumentName, ClientId: clientId);
+            //
+            //await @event.Source.UpdateDocAsync(ctx, roles =>
+            //{
+            //    using (var roleTxn = roles.WriteTransaction())
+            //    {
+            //        var roleMap = roles.Map("roles");
+            //        roleMap.Insert(roleTxn, userId.ToString(), Input.String(role));
+            //    }
+            //});
+
+            //using (var readTxn = doc.ReadTransaction())
+            //{
+            //    var storedValue = rolesMap.Get(readTxn, userId.ToString());
+            //    if (storedValue != null)
+            //    {
+            //        // Try to get the actual string value
+            //        log.LogInformation("Verification: Role stored for userId {clientId} is: {stringValue}", userId, storedValue.String);
+            //    }
+            //    else
+            //    {
+            //        log.LogInformation("Verification: No role found for userId {clientId}", userId);
+            //    }
+            //}
+
+
+            if (role != "owner" && role != "editor")
+            {
+                log.LogCritical("User {userId} (ClientId: {clientId}) does not have permission to edit document {documentName}. DISCONNECTING!", userId, clientId, @event.Context.DocumentName);
+                var httpContext = httpContextAccessor.HttpContext;
+                httpContext!.Abort();
+                await permissionService.InternalDeletePermissionByIdAsync(userId, @event.Context.DocumentName);
+            }
+        }
+        else
+        {
+            log.LogWarning("Document {documentName} changed by unknown client {clientId}.", @event.Context.DocumentName, clientId);
+        }
+    }
+
+    public ValueTask OnClientDisconnectedAsync(ClientDisconnectedEvent @event)
+    {
+        var clientId = @event.Context.ClientId;
+        log.LogInformation("Client disconnecting - ClientId: {clientId}", clientId);
+        //ClientRolesToCleanup.Add(clientId);
+
+        if (ClientIdToUserId.TryRemove(clientId, out var userId))
+        {
+            log.LogInformation("Client {clientId} (userId: {userId}) disconnected. REASON: {r}", clientId, userId, @event.Reason);
+        }
+        else
+        {
+            log.LogInformation("Client {clientId} disconnected, but no userId was found in cache.", clientId);
+        }
+
+        if (HasHandledFirstChange.TryRemove(clientId, out var test))
+        {
+            log.LogInformation("Removed firstChange bool");
+        } else
+        {
+            log.LogInformation("tried removing but no success");
+        }
+
+        return default;
+    }
+
+    public sealed class Notification
+    {
+        [JsonPropertyName("text")]
+        public string? Text { get; set; }
     }
 }
