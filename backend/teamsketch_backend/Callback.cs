@@ -29,7 +29,6 @@ public sealed class Callback(ILogger<Callback> log, PermissionService permission
                 var clientState = JsonSerializer.Deserialize<ClientAwarenessState>(clientStateJson);
                 if (clientState?.UserId != null)
                 {
-                    ClientIdToUserId[@event.Context.ClientId] = clientState.UserId;
 
                     var permission = permissionService.GetPermissionAsync(clientState.UserId, @event.Context.DocumentName).Result;
                     clientState.Role = permission;
