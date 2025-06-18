@@ -52,7 +52,6 @@ namespace teamsketch_backend
                         }
                     };
 
-
                     opt.TokenValidationParameters = new TokenValidationParameters
                     {
                         ValidateIssuer = true,

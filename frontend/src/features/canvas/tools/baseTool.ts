@@ -1,6 +1,5 @@
 // tools/baseTool.ts
 import * as Y from "yjs";
-import { History } from "../Canvas";
 
 export interface Point {
   x: number;
@@ -54,7 +53,6 @@ export interface Tool {
     activeTool: string,
     setSelectedId: (id: string) => void,
     userId: string,
-    addToHistory: (state: History) => void,
   ) => ToolHandlers;
   
   processObjects: (objects: CanvasObject[]) => CanvasObject[];

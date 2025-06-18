@@ -20,12 +20,7 @@ export const PenTool: Tool = {
     _activeTool: string,
     _setSelectedId: (id: string) => void,
     _userId: string,
-    addToHistory: (state: History) => void
   ): ToolHandlers => {
-    const state: History = {
-      after: "", before: "", deleted: false, id: "",
-      historyId: '', operation: "create"
-    };
 
     const handleMouseDown = (e: any) => {
       setIsDrawing(true);
@@ -46,7 +41,6 @@ export const PenTool: Tool = {
       yPath.set('toolType', 'pen');
 
       yObjects.set(pathId, yPath);
-      state.before = yPath;
 
       currentState.current = {
         pathId,
@@ -65,7 +59,7 @@ export const PenTool: Tool = {
       const { yPoints } = currentState.current;
       Y.transact(yPoints.doc as Y.Doc, () => {
         yPoints.push([pointerPosition.x, pointerPosition.y]);
-      });
+      }, _userId);
 
       //updateObjectsFromYjs();
     };
@@ -87,22 +81,11 @@ export const PenTool: Tool = {
         const simplified = simplify(formattedPoints, options.current.simplify, false);
         const flattenedSimplified = simplified.flatMap(p => [p.x, p.y]);
 
-        state.after = {
-          id: pathId,
-          type: 'path',
-          points: flattenedSimplified,
-          color: options.current.color,
-          strokeWidth: options.current.size,
-          toolType: 'pen'
-        };
-        state.id = pathId;
-
         if (flattenedSimplified.length > 2) {
           Y.transact(yPath.doc as Y.Doc, () => {
             yPoints.delete(0, yPoints.length);
             yPoints.push(flattenedSimplified);
-          });
-          addToHistory(state);
+          }, _userId);
           //updateObjectsFromYjs();
         }
       }

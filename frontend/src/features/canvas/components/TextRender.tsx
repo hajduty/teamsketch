@@ -4,7 +4,6 @@ import * as Y from "yjs";
 import { CanvasObject } from "../tools/baseTool";
 import { TextEditor } from "./TextEditor";
 import { useTransformer } from "../../../hooks/useTransformer";
-import { History } from "../Canvas";
 
 export type TextToolProps = {
   obj: CanvasObject;
@@ -18,7 +17,7 @@ export type TextToolProps = {
   };
   activeTool: string;
   updateObjectsFromYjs: () => void;
-  addToHistory: (state: History) => void;
+  userId: string;
 };
 
 export const TextRender: React.FC<TextToolProps> = ({
@@ -27,7 +26,7 @@ export const TextRender: React.FC<TextToolProps> = ({
   toolOptions,
   activeTool,
   updateObjectsFromYjs,
-  addToHistory
+  userId
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const {
@@ -40,7 +39,7 @@ export const TextRender: React.FC<TextToolProps> = ({
     updateObject,
     handleDragStart,
     handleDragMove
-  } = useTransformer(obj, yObjects, updateObjectsFromYjs, addToHistory);
+  } = useTransformer(obj, yObjects, updateObjectsFromYjs, userId);
 
   useEffect(() => {
     if (!isEditing) {
@@ -48,7 +47,7 @@ export const TextRender: React.FC<TextToolProps> = ({
     }
   }, [bindTransformer, isEditing]);
 
-  const handleTextDblClick = useCallback((e:any) => {
+  const handleTextDblClick = useCallback((e: any) => {
     if (activeTool === "text") {
       e.cancelBubble = true;
       setIsEditing(true);
@@ -57,8 +56,6 @@ export const TextRender: React.FC<TextToolProps> = ({
 
   const handleTextChange = useCallback((newText: string) => {
     updateObject({ text: newText });
-    const state: History = {before: {text: obj.text}, after: {text: newText}, id: obj.id};
-    addToHistory(state);
     setIsEditing(false);
   }, [updateObject]);
 
@@ -71,7 +68,7 @@ export const TextRender: React.FC<TextToolProps> = ({
             item.set("selected", itemId === obj.id);
           }
         });
-      });
+      }, userId);
       updateObjectsFromYjs();
     }
   }, [activeTool, obj.id, yObjects, updateObjectsFromYjs]);

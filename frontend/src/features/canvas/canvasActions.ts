@@ -1,6 +1,5 @@
 // canvasActions.ts
 import * as Y from "yjs";
-import { History } from "./Canvas";
 
 export function clearCanvas(yObjects: any, ydoc: any) {
   Y.transact(ydoc, () => {
@@ -8,7 +7,7 @@ export function clearCanvas(yObjects: any, ydoc: any) {
   });
 }
 
-export function undo(
+/* export function undo(
   historyRef: React.RefObject<any[]>,
   setHistory: (h: any[]) => void,
   historyIndexRef: React.RefObject<number>,
@@ -105,3 +104,4 @@ export const dispatchHistoryChangeEvent = () => {
   const event = new CustomEvent('historyStateChange');
   document.dispatchEvent(event);
 };
+ */

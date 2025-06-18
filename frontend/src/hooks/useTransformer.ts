@@ -7,7 +7,7 @@ export function useTransformer(
   obj: CanvasObject,
   yObjects: Y.Map<any>,
   updateObjectsFromYjs: () => void,
-  addToHistory: (state: History) => void
+  userId: string
 ) {
   const shapeRef = useRef<any>(null);
   const transformerRef = useRef<any>(null);
@@ -33,7 +33,7 @@ export function useTransformer(
       Object.entries(properties).forEach(([key, value]) => {
         yObjRef.current?.set(key, value);
       });
-    });
+    }, userId);
 
     updateObjectsFromYjs();
   }, [yObjects, updateObjectsFromYjs]);
@@ -47,6 +47,27 @@ export function useTransformer(
       transformerRef.current.getLayer().batchDraw();
     }
   }, [obj.selected]);
+
+    const handleTransformStart = useCallback(() => {
+    if (!shapeRef.current) return;
+
+    const node = shapeRef.current;
+    const scaleX = node.scaleX();
+    const scaleY = node.scaleY();
+
+    updateObject({
+      x: node.x(),
+      y: node.y(),
+      rotation: node.rotation(),
+      scaleX,
+      scaleY,
+    });
+    console.log(node);
+
+    state.current.id = shapeRef.current.attrs.id;
+    state.current.before = {scaleX, scaleY};
+
+  }, [updateObject]);
 
   const handleTransformEnd = useCallback(() => {
     if (!shapeRef.current) return;
@@ -62,10 +83,7 @@ export function useTransformer(
       scaleX,
       scaleY,
     });
-    console.log("transformed end");
 
-    node.scaleX(1);
-    node.scaleY(1);
   }, [updateObject]);
 
   const handleDragStart = useCallback((e: any) => {
@@ -88,9 +106,6 @@ export function useTransformer(
       x: e.target.x(),
       y: e.target.y(),
     });
-    state.current.id = shapeRef.current.attrs.id;
-    state.current.after = {x: e.target.x(),y: e.target.y()};
-    addToHistory(state.current);
     //console.log(shapeRef.current);
   }, [updateObject]);
 
@@ -106,6 +121,7 @@ export function useTransformer(
     bindTransformer,
     updateObject,
     handleTransformEnd,
+    handleTransformStart,
     handleDragMove,
     handleDragEnd,
     handleDragStart,
