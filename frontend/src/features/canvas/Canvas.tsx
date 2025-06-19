@@ -16,6 +16,7 @@ import { useAuth } from "../auth/AuthProvider";
 import { useCanvasStore } from "./canvasStore";
 import Konva from "konva";
 import { useCanvasInteractions } from "../../hooks/useCanvasInteractions";
+import { wsUrl } from "../../lib/apiClient";
 
 export interface CanvasRef {
   clearCanvas: () => void;
@@ -128,7 +129,7 @@ export const Canvas: FC<{ roomId: string, role?: string }> = ({ roomId, role }) 
     const roomName = roomId;
 
     providerRef.current = new WebsocketProvider(
-      `wss://localhost:5001/api/Room/collaboration/${roomName}/${token}`,
+      `${wsUrl}/Room/collaboration/${roomName}/${token}`,
       "",
       ydoc
     );

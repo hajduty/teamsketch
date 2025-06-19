@@ -61,7 +61,6 @@ namespace teamsketch_backend.Service
                 issuer: _config["Jwt:Issuer"],
                 audience: _config["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(int.Parse(_config["Jwt:ExpiresInMinutes"]!)),
                 signingCredentials: creds
             );
 

@@ -32,8 +32,6 @@ namespace teamsketch_backend.Controllers
         {
             try
             {
-                Console.WriteLine($"A request has come in. {token}");
-
                 if (string.IsNullOrEmpty(token))
                 {
                     return Unauthorized("Token is required.");
@@ -43,8 +41,8 @@ namespace teamsketch_backend.Controllers
                 {
                     var userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-                    Console.WriteLine($"DEBUG: UserId from token: {userId}");
-                    Console.WriteLine($"DEBUG: All claims: {string.Join(", ", principal.Claims.Select(c => $"{c.Type}={c.Value}"))}");
+                    //Console.WriteLine($"DEBUG: UserId from token: {userId}");
+                    //Console.WriteLine($"DEBUG: All claims: {string.Join(", ", principal.Claims.Select(c => $"{c.Type}={c.Value}"))}");
 
                     var doc = await _documentStore.GetDocAsync(roomName);
 
@@ -59,11 +57,11 @@ namespace teamsketch_backend.Controllers
                         {
                             // Use the new AddOwnerPermissionAsync method instead
                             await _permissionService.AddOwnerPermissionAsync(roomName, userId);
-                            Console.WriteLine($"DEBUG: Successfully added owner permission for {userId}");
+                            //Console.WriteLine($"DEBUG: Successfully added owner permission for {userId}");
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine($"DEBUG: Failed to add owner permission: {ex.Message}");
+                            //.WriteLine($"DEBUG: Failed to add owner permission: {ex.Message}");
                             return BadRequest($"Failed to create room: {ex.Message}");
                         }
 
@@ -73,7 +71,7 @@ namespace teamsketch_backend.Controllers
                     // Check permission using userId (not email)
                     var role = await _permissionService.GetPermissionAsync(userId, roomName);
 
-                    Console.WriteLine($"DEBUG: User {userId} has role '{role}' in room {roomName}");
+                    //Console.WriteLine($"DEBUG: User {userId} has role '{role}' in room {roomName}");
 
                     if (role == "none")
                     {
