@@ -10,7 +10,7 @@ const App = () => {
       <Route path="/login" element={<SignIn />} />
       <Route path="/:roomId" element={<ProtectedRoute> <Canvas /> </ProtectedRoute>} />
       <Route
-        path="/canvas"
+        path="/"
         element={<ProtectedRoute> <Canvas /> </ProtectedRoute>}
       />
     </Routes>

@@ -10,22 +10,21 @@ import { TextRender } from "./components/TextRender";
 import PenRender from "./components/PenRender";
 import { useIsDoubleClick } from "../../hooks/useIsDoubleClick";
 import { CursorsOverlay } from "./components/CursorOverlay";
-import { generateHistoryId, getTransformedPointer } from "../../utils/utils";
+import { getTransformedPointer } from "../../utils/utils";
 import { SelectTool } from "./tools/selectTool";
-import { clearCanvas, undo, redo } from "./canvasActions";
 import InfiniteGrid from "./components/InfiniteGrid";
 import { useAuth } from "../auth/AuthProvider";
 import { debounce } from 'lodash';
-import { Permissions } from "../../types/permission";
+import { clearCanvas } from "./canvasActions";
 
 export interface CanvasRef {
   clearCanvas: () => void;
   setTool: (tool: string) => void;
   setOption: (key: string, value: any) => void;
-  historyState: History[];
-  historyIndex: number;
   undo: () => void;
   redo: () => void;
+  canRedo: boolean;
+  canUndo: boolean;
 }
 
 export interface History {
@@ -49,15 +48,13 @@ const TOOLS_COMPONENTS: Record<string, FC<any>> = {
 };
 
 export const Canvas = forwardRef<CanvasRef, { roomId: string, role?: string }>(({ roomId, role }, ref) => {
+  const { user } = useAuth();
+
   const stageRef = useRef<any>(null);
   const [stageScale, setStageScale] = useState(1);
   const [stagePosition, setStagePosition] = useState({ x: 0, y: 0 });
   const [isSpacePressed, setIsSpacePressed] = useState(false);
   //const [role, setRole] = useState<string>("");
-
-  const [history, setHistory] = useState<History[]>([]);
-  const historyRef = useRef<History[]>([]);
-  const historyIndexRef = useRef<number>(-1);
 
   const isDoubleClick = useIsDoubleClick(200);
   const { width, height } = useWindowDimensions();
@@ -78,37 +75,13 @@ export const Canvas = forwardRef<CanvasRef, { roomId: string, role?: string }>((
   const providerRef = useRef<WebsocketProvider | null>(null);
   const awarenessRef = useRef<any>(null);
   const [otherCursors, setOtherCursors] = useState<AwarenessState[]>([]);
+  const undoManager = useRef(new Y.UndoManager(yObjects, {
+    captureTimeout: 200,
+    trackedOrigins: new Set([user?.id])
+  })).current;
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
-
-  const { user } = useAuth();
-
   const isToolsDisabled = role === "none" || role === "viewer" || role === "";
-
-  // Update historyRef whenever history state changes
-  useEffect(() => {
-    historyRef.current = history;
-  }, [history]);
-
-  const addToHistory = (state: History) => {
-    const stateWithId = {
-      ...state,
-      historyId: state.historyId || generateHistoryId()
-    };
-
-    const trimmed = historyRef.current.slice(0, historyIndexRef.current + 1);
-    trimmed.push(state);
-    historyRef.current = trimmed;
-    historyIndexRef.current++;
-
-    setHistory(prev => {
-      const newHistory = [...prev, stateWithId];
-      return newHistory;
-    });
-
-    const event = new CustomEvent('historyStateChange');
-    document.dispatchEvent(event);
-  };
 
   const updateObjectsFromYjs = useCallback(() => {
     const allObjects: CanvasObject[] = [];
@@ -179,8 +152,7 @@ export const Canvas = forwardRef<CanvasRef, { roomId: string, role?: string }>((
     updateObjectsFromYjs,
     activeTool,
     setSelectedId,
-    awarenessRef.current?.getLocalState()?.username,
-    addToHistory
+    awarenessRef.current?.getLocalState()?.userId,
   );
 
   useImperativeHandle(ref, () => ({
@@ -191,14 +163,10 @@ export const Canvas = forwardRef<CanvasRef, { roomId: string, role?: string }>((
         toolOptions.current[key] = value;
       }
     },
-    get historyState() {
-      return historyRef.current;
-    },
-    get historyIndex() {
-      return historyIndexRef.current;
-    },
-    undo: () => isToolsDisabled ? undefined : undo(historyRef, setHistory, historyIndexRef, yObjects),
-    redo: () => isToolsDisabled ? undefined : redo(historyRef, setHistory, historyIndexRef, yObjects, ydoc),
+    undo: () => isToolsDisabled ? undefined : undoManager.undo(),
+    redo: () => isToolsDisabled ? undefined : undoManager.redo(),
+    get canUndo() { return undoManager.canUndo(); },
+    get canRedo() { return undoManager.canRedo(); }
   }));
 
   const debouncedSetCursor = useMemo(
@@ -282,46 +250,48 @@ export const Canvas = forwardRef<CanvasRef, { roomId: string, role?: string }>((
   }, [handleKeyDown, handleKeyUp]);
 
   return (
-    <Stage
-      ref={stageRef}
-      width={width!}
-      height={height!}
-      draggable={isSpacePressed}
-      scale={{ x: stageScale, y: stageScale }}
-      position={stagePosition}
-      onWheel={handleWheelZoom}
-      onDragEnd={handleStageDragEnd}
-      onMouseDown={!isSpacePressed && !isToolsDisabled ? handleMouseDown : undefined}
-      onMouseMove={!isSpacePressed ? wrappedHandleMouseMove : undefined}
-      onMouseUp={!isSpacePressed && !isToolsDisabled ? handleMouseUp : undefined}
-      onClick={!isSpacePressed && !isToolsDisabled ? handleClick : undefined}
-      onDblClick={(e) => {
-        if (!isSpacePressed && !isToolsDisabled && (isDoubleClick() && handleClick)) {
-          handleDblClick?.(e);
-        }
-      }}
-    >
-      <InfiniteGrid stageRef={stageRef} />
-      <Layer>
-        {objects.map((obj) => {
-          const ToolComponent = TOOLS_COMPONENTS[obj.type];
-          return ToolComponent ? (
-            <ToolComponent
-              key={obj.id}
-              obj={obj}
-              yObjects={yObjects}
-              toolOptions={toolOptions}
-              activeTool={activeTool}
-              updateObjectsFromYjs={updateObjectsFromYjs}
-              addToHistory={addToHistory}
-              isSpacePressed={isSpacePressed}
-              isSelected={selectedId === obj.id}
-              stageRef={stageRef}
-            />
-          ) : null;
-        })}
-        <CursorsOverlay cursors={otherCursors} scale={stageScale} />
-      </Layer>
-    </Stage>
+    <>
+      <Stage
+        ref={stageRef}
+        width={width!}
+        height={height!}
+        draggable={isSpacePressed}
+        scale={{ x: stageScale, y: stageScale }}
+        position={stagePosition}
+        onWheel={handleWheelZoom}
+        onDragEnd={handleStageDragEnd}
+        onMouseDown={!isSpacePressed && !isToolsDisabled ? handleMouseDown : undefined}
+        onMouseMove={!isSpacePressed ? wrappedHandleMouseMove : undefined}
+        onMouseUp={!isSpacePressed && !isToolsDisabled ? handleMouseUp : undefined}
+        onClick={!isSpacePressed && !isToolsDisabled ? handleClick : undefined}
+        onDblClick={(e) => {
+          if (!isSpacePressed && !isToolsDisabled && (isDoubleClick() && handleClick)) {
+            handleDblClick?.(e);
+          }
+        }}
+      >
+        <InfiniteGrid stageRef={stageRef} />
+        <Layer>
+          {objects.map((obj) => {
+            const ToolComponent = TOOLS_COMPONENTS[obj.type];
+            return ToolComponent ? (
+              <ToolComponent
+                key={obj.id}
+                obj={obj}
+                yObjects={yObjects}
+                toolOptions={toolOptions}
+                activeTool={activeTool}
+                updateObjectsFromYjs={updateObjectsFromYjs}
+                isSpacePressed={isSpacePressed}
+                isSelected={selectedId === obj.id}
+                stageRef={stageRef}
+                userId={user?.id}
+              />
+            ) : null;
+          })}
+          <CursorsOverlay cursors={otherCursors} scale={stageScale} />
+        </Layer>
+      </Stage>
+    </>
   );
 });

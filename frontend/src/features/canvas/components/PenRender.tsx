@@ -3,7 +3,6 @@ import { Line, Transformer } from "react-konva";
 import { CanvasObject } from "../tools/baseTool";
 import { useTransformer } from "../../../hooks/useTransformer";
 import * as Y from "yjs";
-import { History } from "../Canvas";
 import { smoothPathPoints } from "../../../utils/smoothPoints";
 import React from "react";
 
@@ -13,25 +12,26 @@ interface PenRenderProps {
   stageRef: any;
   yObjects: Y.Map<any>;
   updateObjectsFromYjs: () => void;
-  addToHistory: (state: History) => void;
+  userId: string;
 }
 
 const PenRender: FC<PenRenderProps> = ({
   obj,
   yObjects,
   updateObjectsFromYjs,
-  addToHistory
+  userId
 }) => {
   const {
     shapeRef,
     transformerRef,
     bindTransformer,
     handleTransformEnd,
+    handleTransformStart,
     handleDragMove,
     handleDragEnd,
     preventDefault,
     handleDragStart,
-  } = useTransformer(obj, yObjects, updateObjectsFromYjs, addToHistory);
+  } = useTransformer(obj, yObjects, updateObjectsFromYjs, userId);
 
   useEffect(() => {
     bindTransformer();
@@ -61,6 +61,7 @@ const PenRender: FC<PenRenderProps> = ({
         onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
         onTransformEnd={handleTransformEnd}
+        onTransformStart={handleTransformStart}
         hitStrokeWidth={
           obj.scaleX && obj.scaleX !== 0
             ? Math.min(400, Math.max(20, Math.round(20 / obj.scaleX)))

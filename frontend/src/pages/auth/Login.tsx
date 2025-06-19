@@ -42,8 +42,8 @@ const SignIn: React.FC = () => {
             <input
               className="shadow appearance-none border rounded w-full py-2 px-3 text-neutral-300 leading-tight focus:outline-none focus:shadow-outline bg-neutral-800 border-neutral-700"
               id="email"
-/*               type="email"
- */              value={email}
+/*                type="email"
+ */               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
@@ -56,8 +56,8 @@ const SignIn: React.FC = () => {
             <input
               className="shadow appearance-none border rounded w-full py-2 px-3 text-neutral-300 leading-tight focus:outline-none focus:shadow-outline bg-neutral-800 border-neutral-700"
               id="password"
-/*               type="password"
- */              value={password}
+               type="password"
+               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />

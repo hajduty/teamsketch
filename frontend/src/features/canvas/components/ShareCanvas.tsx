@@ -160,7 +160,7 @@ export const ShareCanvas = ({ roomId }: { roomId: any }) => {
                   <input
                     readOnly
                     className="bg-neutral-800 text-white px-2 py-1 border border-neutral-600 flex-1 rounded"
-                    value={`${window.location.origin}/room/${roomId}`}
+                    value={`${window.location.origin}/${roomId}`}
                   />
                   <Button onClick={copyToClipboard} className="hover:bg-green-200 rounded-sm">
                     Copy
