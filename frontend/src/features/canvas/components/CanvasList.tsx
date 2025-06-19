@@ -59,7 +59,7 @@ export const CanvasList = () => {
                     const newRoomId = crypto.randomUUID();
                     window.location.href = `/${newRoomId}`;
                   }}
-                  className="w-full bg-blue-500 hover:bg-blue-600 transition rounded px-3 py-1 text-sm font-medium"
+                  className="w-full bg-blue-600 hover:bg-blue-500 transition duration-75 rounded px-3 py-1 text-sm font-medium"
                 >
                   New room
                 </button>
@@ -71,7 +71,7 @@ export const CanvasList = () => {
                       const newRoomId = crypto.randomUUID();
                       window.location.href = `/${newRoomId}`;
                     }}
-                    className="w-full bg-blue-500 hover:bg-blue-600 transition rounded px-3 py-1 text-sm font-medium"
+                    className="w-full bg-blue-600 hover:bg-blue-500 transition duration-75 rounded px-3 py-1 text-sm font-medium"
                   >
                     New room
                   </button>

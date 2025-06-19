@@ -1,6 +1,6 @@
 // tools/textTool.ts
 import { v4 as uuidv4 } from 'uuid';
-import { Tool, ToolHandlers } from './baseTool';
+import { Tool, ToolHandlers, ToolOptions } from './baseTool';
 import * as Y from 'yjs';
 import { getTransformedPointer } from '../../../utils/utils';
 
@@ -10,7 +10,7 @@ export const TextTool: Tool = {
     _isDrawing: boolean,
     _setIsDrawing: (drawing: boolean) => void,
     _currentState: { current: any },
-    options: { current: any },
+    options: ToolOptions,
     updateObjectsFromYjs: () => void,
     activeTool: string,
     _setSelectedId,
@@ -29,7 +29,7 @@ export const TextTool: Tool = {
               obj.set('selected', false);
             }
           });
-      }});
+      }}, _userId);
       
       updateObjectsFromYjs();
     };
@@ -50,9 +50,9 @@ export const TextTool: Tool = {
           x: pointerPosition.x,
           y: pointerPosition.y,
           text: 'Sample text',
-          fontSize: options.current.fontSize || 16,
-          fontFamily: options.current.fontFamily || 'Arial',
-          color: options.current.color || '#000000',
+          fontSize: options.fontSize || 16,
+          fontFamily: options.fontFamily || 'Arial',
+          color: options.color || '#000000',
           width: 200,
           selected: true,
           rotation: 0
@@ -72,7 +72,7 @@ export const TextTool: Tool = {
             yTextObj.set(key, value);
           });
           yObjects.set(textObj.id, yTextObj);
-        });
+        }, _userId);
 
         updateObjectsFromYjs();
       }
@@ -85,9 +85,5 @@ export const TextTool: Tool = {
       handleClick,
       handleDblClick
     };
-  },
-
-  processObjects: (objects) => {
-    return objects;
   }
 };

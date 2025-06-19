@@ -99,7 +99,7 @@ export const ShareCanvas = ({ roomId }: { roomId: any }) => {
 
   return (
     <div className="fixed top-0 right-0 m-6 z-10">
-      <button onClick={() => setIsModalOpen(true)} className="p-2 bg-blue-500 border border-neutral-700 rounded-md flex hover:bg-blue-600 transition duration-150">
+      <button onClick={() => setIsModalOpen(true)} className="p-2 bg-blue-600 border border-neutral-700 rounded-md flex hover:bg-blue-500 transition duration-75">
         <Icon iconName="share" color="white" />
       </button>
 
@@ -141,13 +141,13 @@ export const ShareCanvas = ({ roomId }: { roomId: any }) => {
                 <option value="editor">Editor</option>
               </select>
 
-              <Button
+              <button
                 onClick={addUser}
-                className="rounded-sm text-white px-3 py-1 gap-1 bg-blue-500"
+                className="flex m-auto p-2 rounded-sm text-white gap-1 bg-blue-600 hover:bg-blue-500 transition duration-75"
               >
                 <Icon iconName="add" color="white" />
                 Add
-              </Button>
+              </button>
 
             </div>
 
@@ -192,7 +192,7 @@ export const ShareCanvas = ({ roomId }: { roomId: any }) => {
                       className="flex justify-between items-center border rounded-sm p-2 border-neutral-700 my-3"
                     >
                       <span className="flex gap-2 items-center">
-                        {perm.userEmail}
+                        {perm.role != "owner" ? perm.userEmail : perm.userEmail + " (Owner)"}
                         {perm.role != "owner" &&
                           <select
                             value={perm.role}
@@ -204,11 +204,11 @@ export const ShareCanvas = ({ roomId }: { roomId: any }) => {
                           </select>
                         }
                       </span>
-                      
+
                       {perm.role != "owner" &&
-                        <button onClick={() => deleteUser(perm)} className="border-neutral-700 border hover:bg-neutral-950 flex rounded-sm px-1 py-1 text-sm ">
-                        <Icon iconName="delete" color="red" />
-                      </button>
+                        <button onClick={() => deleteUser(perm)} className="border-neutral-700 border hover:bg-neutral-800 flex rounded-sm px-1 py-1 text-sm transition duration-75">
+                          <Icon iconName="delete" color="red" />
+                        </button>
                       }
                     </li>
                   ))}

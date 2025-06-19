@@ -17,7 +17,6 @@ namespace teamsketch_backend
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
-
             builder.Services.AddControllers();
 
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -88,16 +87,15 @@ namespace teamsketch_backend
                                .AllowAnyMethod();
                     });
 
-                options.AddPolicy("NoCredentials", 
+                options.AddPolicy("AllowOrigin",
                     builder =>
                     {
                         builder.WithOrigins("http://localhost:5173")
-                          .AllowAnyHeader()
-                          .AllowAnyMethod();
+                               .AllowAnyHeader()
+                               .AllowAnyMethod();
                     });
             });
 
-            //builder.Services.AddSingleton<IWebSocketConnectionService, WebSocketConnectionService>();
             builder.Services.AddHttpContextAccessor();
 
             var app = builder.Build();
@@ -108,7 +106,7 @@ namespace teamsketch_backend
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-            
+
             app.UseCors("AllowOrigin");
 
             app.UseHttpsRedirection();
