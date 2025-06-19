@@ -59,6 +59,8 @@ function App() {
     };
   }, [roomId]);
 
+  if (!roomId) return null;
+
   return (
     <>
       <div className="flex flex-row h-screen justify-center items-center bg-neutral-800 relative">

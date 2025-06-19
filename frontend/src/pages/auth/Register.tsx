@@ -5,7 +5,7 @@ import { useAuth } from '../../features/auth/AuthProvider';
 import axios from 'axios';
 import { apiRoutes } from '../../lib/apiRoutes';
 
-const SignIn: React.FC = () => {
+const Register: React.FC = () => {
   const navigate = useNavigate();
   const { authenticated, login } = useAuth();
   const [email, setEmail] = useState('');
@@ -20,10 +20,8 @@ const SignIn: React.FC = () => {
     e.preventDefault();
 
     try {
-      const response = await axios.post(apiRoutes.auth.login, { email, password });
-      login(response.data.token, response.data.user);
-      const newRoomId = crypto.randomUUID();
-      navigate(`/${newRoomId}`, { replace: true });
+      const response = await axios.post(apiRoutes.auth.register, { email, password });
+      navigate('/login');
     } catch (err) {
       console.error('Login failed', err);
       setError(true);
@@ -69,10 +67,10 @@ const SignIn: React.FC = () => {
           <div
             className="text-white flex flex-row gap-2 rounded focus:outline-none justify-center focus:shadow-outline mb-6"
           >
-            Don't have an account?
-            <Link to={"/register"}>
+            Already have an account?
+            <Link to={"/login"}>
               <button className='underline text-blue-400 cursor-pointer hover:text-blue-300' type='submit'>
-                Register
+                Login
               </button>
             </Link>
           </div>
@@ -81,7 +79,7 @@ const SignIn: React.FC = () => {
             className="bg-blue-700 hover:bg-blue-500 text-white py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full"
             type="submit"
           >
-            Sign in
+            Sign up
           </button>
         </form>
       </div>
@@ -93,4 +91,4 @@ const SignIn: React.FC = () => {
   );
 };
 
-export default SignIn;
+export default Register;
