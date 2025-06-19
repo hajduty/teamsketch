@@ -7,7 +7,6 @@ import { Tool, ToolHandlers, ToolOptions } from './baseTool';
 import * as Y from 'yjs';
 import simplify from 'simplify-js';
 import { getTransformedPointer } from '../../../utils/utils';
-import { History } from '../Canvas';
 
 export const PenTool: Tool = {
   create: (
@@ -15,7 +14,7 @@ export const PenTool: Tool = {
     isDrawing: boolean,
     setIsDrawing: (drawing: boolean) => void,
     currentState: { current: any },
-    options: { current: ToolOptions },
+    options: ToolOptions,
     updateObjectsFromYjs: () => void,
     _activeTool: string,
     _setSelectedId: (id: string) => void,
@@ -36,8 +35,8 @@ export const PenTool: Tool = {
       yPath.set('id', pathId);
       yPath.set('type', 'path');
       yPath.set('points', yPoints);
-      yPath.set('color', options.current.color);
-      yPath.set('strokeWidth', options.current.size);
+      yPath.set('color', options.color);
+      yPath.set('strokeWidth', options.size);
       yPath.set('toolType', 'pen');
 
       yObjects.set(pathId, yPath);
@@ -78,7 +77,7 @@ export const PenTool: Tool = {
           formattedPoints.push({ x: rawPoints[i], y: rawPoints[i + 1] });
         }
 
-        const simplified = simplify(formattedPoints, options.current.simplify, false);
+        const simplified = simplify(formattedPoints, options.simplify, false);
         const flattenedSimplified = simplified.flatMap(p => [p.x, p.y]);
 
         if (flattenedSimplified.length > 2) {
@@ -99,8 +98,4 @@ export const PenTool: Tool = {
       handleMouseUp
     };
   },
-  
-  processObjects: (objects) => {
-    return objects;
-  }
 };

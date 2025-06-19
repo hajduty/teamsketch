@@ -14,18 +14,18 @@ export const TextEditor: React.FC<TextEditorProps> = ({ textNode, onClose, onCha
   useEffect(() => {
     const textarea = textareaRef.current;
     if (!textarea || !textNode) return;
-  
+
     const stage = textNode.getStage();
     const stageBox = stage.container().getBoundingClientRect();
-  
+
     const absPos = textNode.getAbsolutePosition();
     const scale = stage.scaleX();
-  
+
     const stageOffset = stage.position();
-  
+
     const x = (absPos.x - stageOffset.x) / scale + stageBox.left;
     const y = (absPos.y - stageOffset.y) / scale + stageBox.top;
-  
+
     textarea.style.position = "absolute";
     textarea.style.top = `${y}px`;
     textarea.style.left = `${x}px`;
@@ -45,10 +45,10 @@ export const TextEditor: React.FC<TextEditorProps> = ({ textNode, onClose, onCha
     textarea.style.resize = "none";
     textarea.style.overflow = "hidden";
     textarea.style.whiteSpace = "pre-wrap";
-  
+
     textarea.value = textNode.text();
     textarea.focus();
-  
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
@@ -57,22 +57,22 @@ export const TextEditor: React.FC<TextEditorProps> = ({ textNode, onClose, onCha
         onClose();
       }
     };
-  
+
     const handleClickOutside = (e: MouseEvent) => {
       if (!textarea.contains(e.target as Node)) {
         onChange(textarea.value);
       }
     };
-  
+
     window.addEventListener("keydown", handleKeyDown);
     document.addEventListener("mousedown", handleClickOutside);
-  
+
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [textNode, onChange, onClose]);
-  
+
   return (
     <Html>
       <textarea

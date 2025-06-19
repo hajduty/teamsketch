@@ -1,9 +1,10 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useCallback } from "react";
 import { Group, Text, Transformer } from "react-konva";
 import * as Y from "yjs";
 import { CanvasObject } from "../tools/baseTool";
 import { TextEditor } from "./TextEditor";
 import { useTransformer } from "../../../hooks/useTransformer";
+import { useCanvasStore } from "../canvasStore";
 
 export type TextToolProps = {
   obj: CanvasObject;
@@ -18,17 +19,33 @@ export type TextToolProps = {
   activeTool: string;
   updateObjectsFromYjs: () => void;
   userId: string;
+  editing: boolean;
 };
 
-export const TextRender: React.FC<TextToolProps> = ({
+const areEqual = (prev: TextToolProps, next: TextToolProps) => {
+  return (
+    prev.obj.id === next.obj.id &&
+    prev.obj.x === next.obj.x &&
+    prev.obj.y === next.obj.y &&
+    prev.obj.text === next.obj.text &&
+    prev.obj.selected === next.obj.selected &&
+    prev.activeTool === next.activeTool &&
+    prev.editing === next.editing
+  );
+};
+
+export const TextRender: React.FC<TextToolProps> = React.memo(({
   obj,
   yObjects,
   toolOptions,
   activeTool,
   updateObjectsFromYjs,
-  userId
+  userId,
+  editing
 }) => {
-  const [isEditing, setIsEditing] = useState(false);
+  const setGlobalEditing = useCanvasStore((state) => state.setEditing);
+  const setGlobalEditingId = useCanvasStore((state) => state.setEditingId);
+
   const {
     shapeRef,
     transformerRef,
@@ -42,21 +59,23 @@ export const TextRender: React.FC<TextToolProps> = ({
   } = useTransformer(obj, yObjects, updateObjectsFromYjs, userId);
 
   useEffect(() => {
-    if (!isEditing) {
+    if (!editing) {
       bindTransformer();
     }
-  }, [bindTransformer, isEditing]);
+  }, [bindTransformer, editing]);
 
   const handleTextDblClick = useCallback((e: any) => {
     if (activeTool === "text") {
       e.cancelBubble = true;
-      setIsEditing(true);
+      setGlobalEditing(true);
+      setGlobalEditingId(obj.id);
     }
   }, [activeTool]);
 
   const handleTextChange = useCallback((newText: string) => {
     updateObject({ text: newText });
-    setIsEditing(false);
+    setGlobalEditing(false);
+    setGlobalEditingId("");
   }, [updateObject]);
 
   const handleSelect = useCallback((e: any) => {
@@ -73,6 +92,8 @@ export const TextRender: React.FC<TextToolProps> = ({
     }
   }, [activeTool, obj.id, yObjects, updateObjectsFromYjs]);
 
+  //console.log("rerendered");
+
   return (
     <Group id={obj.id} key={obj.id}>
       <Text
@@ -86,11 +107,11 @@ export const TextRender: React.FC<TextToolProps> = ({
         fill={obj.color || toolOptions.current.color}
         width={obj.width || 200}
         rotation={obj.rotation || 0}
-        draggable={!isEditing && obj.selected}
+        draggable={!editing && obj.selected}
         onDragMove={handleDragMove}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
-        visible={!isEditing}
+        visible={!editing}
         perfectDrawEnabled={false}
         listening={activeTool === "text" || activeTool === "select"}
         onDblClick={handleTextDblClick}
@@ -99,15 +120,18 @@ export const TextRender: React.FC<TextToolProps> = ({
         onClick={handleSelect}
       />
 
-      {isEditing && shapeRef.current && (
+      {editing && shapeRef.current && (
         <TextEditor
           textNode={shapeRef.current}
           onChange={handleTextChange}
-          onClose={() => setIsEditing(false)}
+          onClose={() => {
+            setGlobalEditing(false);
+            setGlobalEditingId("");
+          }}
         />
       )}
 
-      {obj.selected && !isEditing && (
+      {obj.selected && !editing && (
         <Transformer
           id={obj.id}
           ref={transformerRef}
@@ -126,4 +150,4 @@ export const TextRender: React.FC<TextToolProps> = ({
       )}
     </Group>
   );
-};
+}, areEqual);

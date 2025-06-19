@@ -1,5 +1,5 @@
 // tools/selectTool.ts
-import { Tool, ToolHandlers } from './baseTool';
+import { Tool, ToolHandlers, ToolOptions } from './baseTool';
 import * as Y from 'yjs';
 
 export const SelectTool: Tool = {
@@ -8,7 +8,7 @@ export const SelectTool: Tool = {
     _isDrawing: boolean,
     _setIsDrawing: (drawing: boolean) => void,
     _currentState: { current: any },
-    _options: { current: any },
+    _options: ToolOptions,
     updateObjectsFromYjs: () => void,
     _activeTool: string,
     _setSelectedId: (id: string) => void,
@@ -51,8 +51,4 @@ export const SelectTool: Tool = {
       handleMouseUp: () => { }
     };
   },
-
-  processObjects: (objects) => {
-    return objects;
-  }
 };

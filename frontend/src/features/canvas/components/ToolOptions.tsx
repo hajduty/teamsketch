@@ -1,12 +1,14 @@
 import { FC } from "react";
-import { CanvasRef } from "../Canvas";
 import EditableDropdown from "../../../components/EditableDropdown";
 import { Color } from "../../../components/Color";
+import { useCanvasStore } from "../canvasStore";
 
-const PenOptions = ({ canvasRef }: { canvasRef: React.RefObject<CanvasRef | null>; }) => {
+const PenOptions = () => {
   const options = [2, 8, 32, 64];
   const simplifyOptions = [0.5, 1, 2.5, 3];
   const tensionOptions = [0.5, 1, 2.5, 3];
+
+  const setOption = useCanvasStore(state => state.setOption);
 
   return (
     <>
@@ -21,14 +23,14 @@ const PenOptions = ({ canvasRef }: { canvasRef: React.RefObject<CanvasRef | null
                 <EditableDropdown
                   options={options}
                   placeholder="24"
-                  onChange={(value: any) => canvasRef.current?.setOption("size", value)}
+                  onChange={(value: any) => setOption("size", value)}
                 />
               </div>
             </div>
             <div className="flex flex-row gap-6 items-center justify-between mt-2">
               <p className="text-sm font-light">Color</p>
               <div className="w-22">
-                <Color onChange={(value: any) => canvasRef.current?.setOption("color", value)} />
+                <Color onChange={(value: any) => setOption("color", value)} />
               </div>
             </div>
           </div>
@@ -40,7 +42,7 @@ const PenOptions = ({ canvasRef }: { canvasRef: React.RefObject<CanvasRef | null
                 <EditableDropdown
                   options={simplifyOptions}
                   placeholder="1"
-                  onChange={(value: any) => canvasRef.current?.setOption("simplify", value)}
+                  onChange={(value: any) => setOption("simplify", value)}
                 />
               </div>
             </div>
@@ -50,7 +52,7 @@ const PenOptions = ({ canvasRef }: { canvasRef: React.RefObject<CanvasRef | null
                 <EditableDropdown
                   options={tensionOptions}
                   placeholder="0.5"
-                  onChange={(value: any) => canvasRef.current?.setOption("tension", value)}
+                  onChange={(value: any) => setOption("tension", value)}
                 />
               </div>
             </div>
@@ -61,8 +63,9 @@ const PenOptions = ({ canvasRef }: { canvasRef: React.RefObject<CanvasRef | null
   )
 }
 
-const TextOptions = ({ canvasRef }: { canvasRef: React.RefObject<CanvasRef | null>; }) => {
+const TextOptions = () => {
   const fontSize = [8, 9, 11, 12, 14, 18, 24, 30, 36, 48, 60, 72, 96];
+  const setOption = useCanvasStore(state => state.setOption);
 
   return (
     <>
@@ -76,14 +79,14 @@ const TextOptions = ({ canvasRef }: { canvasRef: React.RefObject<CanvasRef | nul
                 <EditableDropdown
                   options={fontSize}
                   placeholder="16"
-                  onChange={(value: any) => canvasRef.current?.setOption("fontSize", value)}
+                  onChange={(value: any) => setOption("fontSize", value)}
                 />
               </div>
             </div>
             <div className="flex flex-row gap-6 items-center justify-between mt-2">
               <p className="text-sm font-light">Color</p>
               <div className="w-22">
-                <Color onChange={(value: any) => canvasRef.current?.setOption("color", value)} />
+                <Color onChange={(value: any) => setOption("color", value)} />
               </div>
             </div>
           </div>
@@ -93,11 +96,12 @@ const TextOptions = ({ canvasRef }: { canvasRef: React.RefObject<CanvasRef | nul
   )
 }
 
-export const ToolOptions = ({ tool, canvasRef }: { tool: string; canvasRef: React.RefObject<CanvasRef | null>; }) => {
+export const ToolOptions = () => {
   const TOOL_OPTIONS: Record<string, FC<any>> = {
     pen: PenOptions,
     text: TextOptions,
   };
+  const tool = useCanvasStore(state => state.tool);
 
   const ToolComponent = TOOL_OPTIONS[tool];
 
@@ -108,7 +112,7 @@ export const ToolOptions = ({ tool, canvasRef }: { tool: string; canvasRef: Reac
     <div className="flex flex-col w-52 -translate-x-44 hover:translate-x-0 rounded-r-2xl bg-neutral-950 fixed min-h-72 h-auto top-1/2 -translate-y-1/2 left-0 z-3 transform duration-150 border-border border-1 text-white group">
       <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150 text-white left-0 top-0">
         {ToolComponent ?
-          <ToolComponent canvasRef={canvasRef} />
+          <ToolComponent />
           :
           null
         }
