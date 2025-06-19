@@ -49,6 +49,7 @@ const TOOLS_COMPONENTS: Record<string, FC<any>> = {
 
 export const Canvas = forwardRef<CanvasRef, { roomId: string, role?: string }>(({ roomId, role }, ref) => {
   const { user } = useAuth();
+
   const stageRef = useRef<any>(null);
   const [stageScale, setStageScale] = useState(1);
   const [stagePosition, setStagePosition] = useState({ x: 0, y: 0 });
