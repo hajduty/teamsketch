@@ -1,10 +1,10 @@
 // src/lib/apiClient.ts
 import axios from 'axios';
 
-export const wsUrl = 'wss://localhost:5001/api'
+export const wsUrl = import.meta.env.VITE_API_WS_URL || 'ws://localhost:5001/api'
 
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://localhost:5001/api',
   headers: {
     'Content-Type': 'application/json',
   }

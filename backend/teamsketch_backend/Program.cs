@@ -77,22 +77,17 @@ namespace teamsketch_backend
                 options.DatabaseName = builder.Configuration["MongoDb:DatabaseName"]!;
             });
 
+            var allowedOrigin = builder.Configuration["AllowedOrigin"];
+
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowOrigin",
                     builder =>
                     {
-                        builder.WithOrigins("http://localhost:5173")
+                        builder.WithOrigins(allowedOrigin!)
                                .AllowAnyHeader()
-                               .AllowAnyMethod();
-                    });
-
-                options.AddPolicy("AllowOrigin",
-                    builder =>
-                    {
-                        builder.WithOrigins("http://localhost:5173")
-                               .AllowAnyHeader()
-                               .AllowAnyMethod();
+                               .AllowAnyMethod()
+                               .AllowCredentials();
                     });
             });
 
@@ -103,13 +98,13 @@ namespace teamsketch_backend
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
-                app.UseSwagger();
-                app.UseSwaggerUI();
+                app.UseHttpsRedirection();
             }
+            
+            app.UseSwagger();
+            app.UseSwaggerUI();
 
             app.UseCors("AllowOrigin");
-
-            app.UseHttpsRedirection();
 
             app.UseAuthentication();
             app.UseAuthorization();

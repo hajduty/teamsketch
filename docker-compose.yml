@@ -1,0 +1,43 @@
+version: "3.9"
+
+services:
+  mongo:
+    image: mongo:6
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  backend:
+    build:
+      context: ./backend
+    container_name: backend
+    ports:
+      - "5001:8080"
+    depends_on:
+      - mongo
+    environment:
+      MongoDb__ConnectionString: "mongodb://mongo:27017"
+      MongoDb__DatabaseName: "teamsketch"
+      Jwt__Key: "ThisIsNotAStrongSecretKeyDoChangeMe!"
+      Jwt__Issuer: "teamsketch"
+      Jwt__Audience: "teamsketch_user"
+      AllowedOrigin: "http://localhost:5173" # Internal service name or external full URL for production
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: "http://localhost:5001/api"
+        VITE_API_WS_URL: "ws://localhost:5001/api"
+    container_name: frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    environment:
+      NODE_ENV: production
+
+volumes:
+  mongo-data:

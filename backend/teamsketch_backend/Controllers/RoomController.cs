@@ -30,10 +30,12 @@ namespace teamsketch_backend.Controllers
         [HttpGet("collaboration/{roomName}/{token}")]
         public async Task<IActionResult> RoomAsync(string roomName, string token)
         {
+            Console.WriteLine($"DEBUG: RoomAsync called with roomName={roomName}, token={token}");
             try
             {
                 if (string.IsNullOrEmpty(token))
                 {
+                    Console.WriteLine($"DEBUG: Token is empty {roomName}, token={token}");
                     return Unauthorized("Token is required.");
                 }
 
@@ -41,7 +43,7 @@ namespace teamsketch_backend.Controllers
                 {
                     var userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-                    //Console.WriteLine($"DEBUG: UserId from token: {userId}");
+                    Console.WriteLine($"DEBUG: UserId from token: {userId}");
                     //Console.WriteLine($"DEBUG: All claims: {string.Join(", ", principal.Claims.Select(c => $"{c.Type}={c.Value}"))}");
 
                     var doc = await _documentStore.GetDocAsync(roomName);
@@ -57,11 +59,11 @@ namespace teamsketch_backend.Controllers
                         {
                             // Use the new AddOwnerPermissionAsync method instead
                             await _permissionService.AddOwnerPermissionAsync(roomName, userId);
-                            //Console.WriteLine($"DEBUG: Successfully added owner permission for {userId}");
+                            Console.WriteLine($"DEBUG: Successfully added owner permission for {userId}");
                         }
                         catch (Exception ex)
                         {
-                            //.WriteLine($"DEBUG: Failed to add owner permission: {ex.Message}");
+                            Console.WriteLine($"DEBUG: Failed to add owner permission: {ex.Message}");
                             return BadRequest($"Failed to create room: {ex.Message}");
                         }
 
@@ -75,6 +77,7 @@ namespace teamsketch_backend.Controllers
 
                     if (role == "none")
                     {
+                        Console.WriteLine($"DEBUG: No perms (why no add) {roomName}, token={token}");
                         return Unauthorized("You do not have permission to access this room.");
                     }
 
@@ -82,6 +85,7 @@ namespace teamsketch_backend.Controllers
                 }
                 else
                 {
+                    Console.WriteLine($"DEBUG: Token is lrly invalid {roomName}, token={token}");
                     return Unauthorized("Token is invalid.");
                 }
             }

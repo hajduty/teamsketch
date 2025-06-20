@@ -27,7 +27,7 @@ namespace teamsketch_backend.Service
                 {
                     ValidateIssuer = true,
                     ValidateAudience = true,
-                    ValidateLifetime = true,
+                    ValidateLifetime = false,
                     ValidateIssuerSigningKey = true,
                     ValidIssuer = _config["Jwt:Issuer"],
                     ValidAudience = _config["Jwt:Audience"],
@@ -61,7 +61,8 @@ namespace teamsketch_backend.Service
                 issuer: _config["Jwt:Issuer"],
                 audience: _config["Jwt:Audience"],
                 claims: claims,
-                signingCredentials: creds
+                signingCredentials: creds,
+                expires: DateTime.UtcNow.AddHours(1)
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);

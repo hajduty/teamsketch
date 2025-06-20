@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import apiClient from "../../../lib/apiClient";
 import { apiRoutes } from "../../../lib/apiRoutes";
 import Icon from "../../../components/Icon";
-import { useNavigate } from "react-router-dom";
 
 interface Permission {
   roomId: string;
@@ -12,18 +11,14 @@ interface Permission {
 
 export const CanvasList = () => {
   const [rooms, setRooms] = useState<Permission[]>([]);
-  const [error, setError] = useState<string>("");
   const [collapsed, setCollapsed] = useState(true);
-  const navigate = useNavigate();
 
   const fetchMyRooms = async () => {
     try {
       const response = await apiClient.get(apiRoutes.permission.getMyRooms);
       setRooms(response.data);
-      setError("");
     } catch (err: any) {
       console.error("Failed to fetch rooms", err);
-      setError("Could not load rooms.");
     }
   };
 
