@@ -30,10 +30,12 @@ namespace teamsketch_backend.Controllers
         [HttpGet("collaboration/{roomName}/{token}")]
         public async Task<IActionResult> RoomAsync(string roomName, string token)
         {
+            Console.WriteLine($"DEBUG: RoomAsync called with roomName={roomName}, token={token}");
             try
             {
                 if (string.IsNullOrEmpty(token))
                 {
+                    Console.WriteLine($"DEBUG: Token is empty {roomName}, token={token}");
                     return Unauthorized("Token is required.");
                 }
 
@@ -41,6 +43,7 @@ namespace teamsketch_backend.Controllers
                 {
                     var userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
+                    Console.WriteLine($"DEBUG: UserId from token: {userId}");
                     //Console.WriteLine($"DEBUG: UserId from token: {userId}");
                     //Console.WriteLine($"DEBUG: All claims: {string.Join(", ", principal.Claims.Select(c => $"{c.Type}={c.Value}"))}");
 
@@ -75,6 +78,7 @@ namespace teamsketch_backend.Controllers
 
                     if (role == "none")
                     {
+                        Console.WriteLine($"DEBUG: No perms (why no add) {roomName}, token={token}");
                         return Unauthorized("You do not have permission to access this room.");
                     }
 
@@ -82,6 +86,7 @@ namespace teamsketch_backend.Controllers
                 }
                 else
                 {
+                    Console.WriteLine($"DEBUG: Token is lrly invalid {roomName}, token={token}");
                     return Unauthorized("Token is invalid.");
                 }
             }

@@ -17,7 +17,6 @@ function App() {
   const navigate = useNavigate();
 
   const [permission, setPermission] = useState<Permissions>();
-  const [permissions, setPermissions] = useState<Permissions[]>([]);
 
   useEffect(() => {
     if (!roomId) {
@@ -32,7 +31,6 @@ function App() {
     try {
       const response = await apiClient.get(apiRoutes.permission.getByRoom(roomId));
       const data: Permissions[] = response.data;
-      setPermissions(data);
 
       // Find permission for the current user
       const myPermission = data.find(p => p.userEmail === user.email);

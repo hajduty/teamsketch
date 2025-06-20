@@ -1,0 +1,43 @@
+version: "3.9"
+
+services:
+  mongo:
+    image: mongo:6
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    depends_on:
+      - mongo
+    ports:
+      - "5001:8080"
+    environment:
+      MongoDb__ConnectionString: "mongodb://mongo:27017"
+      MongoDb__DatabaseName: "teamsketch"
+      Jwt__Key: "ThisIsNotAStrongSecretKeyDoChangeMe!"
+      Jwt__Issuer: "teamsketch"
+      Jwt__Audience: "teamsketch_user"
+      AllowedOrigin: "${COOLIFY_FRONTEND_URL:-http://localhost:5173}"
+    restart: unless-stopped
+    labels:
+      - traefik.http.services.backend.loadbalancer.server.port=8080
+      - traefik.http.middlewares.backend-ws.websocket=true
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: "${COOLIFY_BACKEND_URL:-http://localhost:5001}/api"
+        VITE_API_WS_URL: "${COOLIFY_WS_URL:-ws://localhost:5001}/api"
+    ports:
+      - "5173:80"
+    environment:
+      NODE_ENV: "${NODE_ENV:-production}"
+    restart: unless-stopped
+
+volumes:
+  mongo-data:

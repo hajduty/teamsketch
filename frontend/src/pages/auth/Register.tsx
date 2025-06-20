@@ -7,7 +7,7 @@ import { apiRoutes } from '../../lib/apiRoutes';
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
-  const { authenticated, login } = useAuth();
+  const { authenticated } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
@@ -20,7 +20,7 @@ const Register: React.FC = () => {
     e.preventDefault();
 
     try {
-      const response = await axios.post(apiRoutes.auth.register, { email, password });
+      await axios.post(apiRoutes.auth.register, { email, password });
       navigate('/login');
     } catch (err) {
       console.error('Login failed', err);
