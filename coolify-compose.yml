@@ -1,94 +1,80 @@
-version: "3.9"
+mongo:
+  image: mongo:6
+  volumes:
+    - f08ssgw44gco4008kw0skg44-mongo-data:/data/db
+  restart: unless-stopped
+  networks:
+    - f08ssgw44gco4008kw0skg44
+  labels:
+    - coolify.managed=true
+    - coolify.version=4.0.0-beta.323
+    - coolify.applicationId=14
+    - coolify.type=application
+    - coolify.name=mongo-f08ssgw44gco4008kw0skg44
+    - coolify.pullRequestId=0
+  container_name: mongo-f08ssgw44gco4008kw0skg44
 
-services:
-  mongo:
-    image: mongo:6
-    volumes:
-      - f08ssgw44gco4008kw0skg44-mongo-data:/data/db
-    restart: unless-stopped
-    networks:
-      - f08ssgw44gco4008kw0skg44
-    labels:
-      - coolify.managed=true
-      - coolify.version=4.0.0-beta.323
-      - coolify.applicationId=14
-      - coolify.type=application
-      - coolify.name=mongo-f08ssgw44gco4008kw0skg44
-      - coolify.pullRequestId=0
-    container_name: mongo-f08ssgw44gco4008kw0skg44
 
-  backend:
-    build: ./backend
-    depends_on:
-      - mongo
-    environment:
-      MongoDb__ConnectionString: "mongodb://mongo:27017"
-      MongoDb__DatabaseName: "teamsketch"
-      Jwt__Key: "ThisIsNotAStrongSecretKeyDoChangeMe!"
-      Jwt__Issuer: "teamsketch"
-      Jwt__Audience: "teamsketch_user"
-      AllowedOrigin: "https://teamsketch.hajder.app"
-    restart: unless-stopped
-    labels:
-      - traefik.enable=true
-      - traefik.http.services.backend.loadbalancer.server.port=8080
-      - traefik.http.middlewares.backend-ws.websocket=true
-      - traefik.http.middlewares.gzip.compress=true
-      - traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https
+backend:
+  build: ./backend
+  depends_on:
+    - mongo
+  environment:
+    MongoDb__ConnectionString: "mongodb://mongo:27017"
+    MongoDb__DatabaseName: "teamsketch"
+    Jwt__Key: "ThisIsNotAStrongSecretKeyDoChangeMe!"
+    Jwt__Issuer: "teamsketch"
+    Jwt__Audience: "teamsketch_user"
+    AllowedOrigin: "https://teamsketch.hajder.app"  # <-- adjust if needed
+  restart: unless-stopped
+  labels:
+    - traefik.enable=true
+    - traefik.docker.network=f08ssgw44gco4008kw0skg44
+    - traefik.http.services.backend.loadbalancer.server.port=8080
+    - traefik.http.middlewares.backend-redirect-to-https.redirectscheme.scheme=https
+    - traefik.http.middlewares.gzip.compress=true
 
-      # HTTP router redirects to HTTPS
-      - traefik.http.routers.backend-http.entrypoints=http
-      - traefik.http.routers.backend-http.rule=Host(`vwk80sckcwocswwsowkskgo4.hajder.app`)
-      - traefik.http.routers.backend-http.middlewares=redirect-to-https
+    # HTTP router redirects to HTTPS
+    - traefik.http.routers.backend-http.entrypoints=web
+    - traefik.http.routers.backend-http.rule=Host(`vwk80sckcwocswwsowkskgo4.hajder.app`) && PathPrefix(`/api`)
+    - traefik.http.routers.backend-http.middlewares=backend-redirect-to-https
 
-      # HTTPS router
-      - traefik.http.routers.backend-https.entrypoints=https
-      - traefik.http.routers.backend-https.rule=Host(`vwk80sckcwocswwsowkskgo4.hajder.app`)
-      - traefik.http.routers.backend-https.tls=true
-      - traefik.http.routers.backend-https.tls.certresolver=letsencrypt
-      - traefik.http.routers.backend-https.middlewares=gzip
-    networks:
-      - f08ssgw44gco4008kw0skg44
-    container_name: backend-f08ssgw44gco4008kw0skg44
+    # HTTPS router with gzip compression
+    - traefik.http.routers.backend-https.entrypoints=websecure
+    - traefik.http.routers.backend-https.rule=Host(`vwk80sckcwocswwsowkskgo4.hajder.app`) && PathPrefix(`/api`)
+    - traefik.http.routers.backend-https.tls=true
+    - traefik.http.routers.backend-https.tls.certresolver=letsencrypt
+    - traefik.http.routers.backend-https.middlewares=gzip
+  networks:
+    - f08ssgw44gco4008kw0skg44
+  container_name: backend-f08ssgw44gco4008kw0skg44
 
-  frontend:
-    build:
-      context: ./frontend
-      args:
-        # Use the backend HTTPS URL here without /api if your frontend expects that
-        VITE_API_BASE_URL: "https://vwk80sckcwocswwsowkskgo4.hajder.app/api"
-        VITE_API_WS_URL: "wss://vwk80sckcwocswwsowkskgo4.hajder.app/api"
-    environment:
-      NODE_ENV: production
-    restart: unless-stopped
-    labels:
-      - traefik.enable=true
-      - traefik.http.middlewares.gzip.compress=true
-      - traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https
+frontend:
+  build:
+    context: ./frontend
+    args:
+      VITE_API_BASE_URL: "https://vwk80sckcwocswwsowkskgo4.hajder.app/api"
+      VITE_API_WS_URL: "wss://vwk80sckcwocswwsowkskgo4.hajder.app/api"
+  environment:
+    NODE_ENV: production
+  restart: unless-stopped
+  labels:
+    - traefik.enable=true
+    - traefik.docker.network=f08ssgw44gco4008kw0skg44
+    - traefik.http.services.frontend.loadbalancer.server.port=80
+    - traefik.http.middlewares.frontend-redirect-to-https.redirectscheme.scheme=https
 
-      # HTTP router redirects to HTTPS
-      - traefik.http.routers.frontend-http.entrypoints=http
-      - traefik.http.routers.frontend-http.rule=Host(`teamsketch.hajder.app`)
-      - traefik.http.routers.frontend-http.middlewares=redirect-to-https
+    # HTTP → HTTPS redirect
+    - traefik.http.routers.frontend-http.entrypoints=web
+    - traefik.http.routers.frontend-http.rule=Host(`teamsketch.hajder.app`)
+    - traefik.http.routers.frontend-http.middlewares=frontend-redirect-to-https
 
-      # HTTPS router
-      - traefik.http.routers.frontend-https.entrypoints=https
-      - traefik.http.routers.frontend-https.rule=Host(`teamsketch.hajder.app`)
-      - traefik.http.routers.frontend-https.tls=true
-      - traefik.http.routers.frontend-https.tls.certresolver=letsencrypt
-      - traefik.http.routers.frontend-https.middlewares=gzip
-
-      # Make sure frontend listens on port 80 inside container
-      - traefik.http.services.frontend.loadbalancer.server.port=80
-    networks:
-      - f08ssgw44gco4008kw0skg44
-    container_name: frontend-f08ssgw44gco4008kw0skg44
-
-volumes:
-  f08ssgw44gco4008kw0skg44-mongo-data:
-    name: f08ssgw44gco4008kw0skg44-mongo-data
-
-networks:
-  f08ssgw44gco4008kw0skg44:
-    name: f08ssgw44gco4008kw0skg44
-    external: true
+    # HTTPS router
+    - traefik.http.routers.frontend-https.entrypoints=websecure
+    - traefik.http.routers.frontend-https.rule=Host(`teamsketch.hajder.app`)
+    - traefik.http.routers.frontend-https.tls=true
+    - traefik.http.routers.frontend-https.tls.certresolver=letsencrypt
+    - traefik.http.routers.frontend-https.middlewares=gzip
+  networks:
+    - f08ssgw44gco4008kw0skg44
+  container_name: frontend-f08ssgw44gco4008kw0skg44
