@@ -84,7 +84,8 @@ namespace teamsketch_backend
                 options.AddPolicy("AllowOrigin",
                     builder =>
                     {
-                        builder.WithOrigins(allowedOrigin!)
+                        //builder.WithOrigins(allowedOrigin!)
+                        builder.AllowAnyOrigin()
                                .AllowAnyHeader()
                                .AllowAnyMethod()
                                .AllowCredentials();
