@@ -19,6 +19,9 @@ services:
       Jwt__Audience: "teamsketch_user"
       AllowedOrigin: "${COOLIFY_FRONTEND_URL:-http://localhost:5173}"
     restart: unless-stopped
+    labels:
+      - traefik.http.services.backend.loadbalancer.server.port=8080
+      - traefik.http.middlewares.backend-ws.websocket=true
 
   frontend:
     build:
