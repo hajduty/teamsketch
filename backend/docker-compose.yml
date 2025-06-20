@@ -1,20 +1,20 @@
-services:
-  mongo:
-    image: mongo:6
-    container_name: my-mongo
-    ports:
-      - "27017:27017"
-    networks:
-      - backend-network
-
-  backend:
-    build: .
-    depends_on:
-      - mongo
-    environment:
-      - MongoDb__ConnectionString=mongodb://root:password@mongo:27017/?authSource=admin
-    networks:
-      - backend-network
-
-networks:
-  backend-network:
+#services:
+#  mongo:
+#    image: mongo:6
+#    container_name: my-mongo
+#    ports:
+#      - "27017:27017"
+#    networks:
+#      - backend-network
+#
+#  backend:
+#    build: .
+#    depends_on:
+#      - mongo
+#    environment:
+#      - MongoDb__ConnectionString=mongodb://root:password@mongo:27017/?authSource=admin
+#    networks:
+#      - backend-network
+#
+#networks:
+#  backend-network:
