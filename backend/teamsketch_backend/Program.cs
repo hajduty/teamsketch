@@ -84,8 +84,7 @@ namespace teamsketch_backend
                 options.AddPolicy("AllowOrigin",
                     builder =>
                     {
-                        //builder.WithOrigins(allowedOrigin!)
-                        builder.AllowAnyOrigin()
+                        builder.WithOrigins(allowedOrigin!)
                                .AllowAnyHeader()
                                .AllowAnyMethod()
                                .AllowCredentials();
@@ -100,6 +99,8 @@ namespace teamsketch_backend
             if (app.Environment.IsDevelopment())
             {
             }
+
+            Console.WriteLine($"INFO CORS ORIGIN: {allowedOrigin}");
 
             app.UseSwagger();
             app.UseSwaggerUI();
