@@ -56,8 +56,8 @@ services:
       context: ./frontend
       args:
         # Use the backend HTTPS URL here without /api if your frontend expects that
-        VITE_API_BASE_URL: "https://vwk80sckcwocswwsowkskgo4.hajder.app"
-        VITE_API_WS_URL: "wss://vwk80sckcwocswwsowkskgo4.hajder.app"
+        VITE_API_BASE_URL: "https://vwk80sckcwocswwsowkskgo4.hajder.app/api"
+        VITE_API_WS_URL: "wss://vwk80sckcwocswwsowkskgo4.hajder.app/api"
     environment:
       NODE_ENV: production
     restart: unless-stopped
