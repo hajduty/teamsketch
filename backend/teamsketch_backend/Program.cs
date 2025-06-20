@@ -77,6 +77,8 @@ namespace teamsketch_backend
                 options.DatabaseName = builder.Configuration["MongoDb:DatabaseName"]!;
             });
 
+            Console.WriteLine($"connstring: {builder.Configuration["MongoDb:ConnectionString"]}");
+
             var allowedOrigin = builder.Configuration["AllowedOrigin"];
 
             builder.Services.AddCors(options =>
