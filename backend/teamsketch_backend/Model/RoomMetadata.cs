@@ -9,6 +9,7 @@ namespace teamsketch_backend.Model
         public string RoomId { get; set; } = default!;
         public string OwnerId { get; set; } = default!;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public bool? Public { get; set; } = false;
         public string? Title { get; set; }
     }
 }

@@ -84,6 +84,11 @@ namespace teamsketch_backend.Controllers
 
                     return new YDotNetActionResult(roomName);
                 }
+                else if (token == "none") {
+                    var doc = await _documentStore.GetDocAsync(roomName);
+                    await _metadataService.CreateRoomAsync(roomName, "public");
+                    return new YDotNetActionResult(roomName);
+                }
                 else
                 {
                     Console.WriteLine($"DEBUG: Token is lrly invalid {roomName}, token={token}");

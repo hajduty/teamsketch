@@ -8,6 +8,8 @@ interface AuthContextType {
     logout: () => void;
     setUser: (user: User | null) => void;
     loading: boolean;
+    guest: boolean;
+    setGuest: (state: boolean) => void;
 }
 
 interface Props {
@@ -23,10 +25,15 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
 
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
+    const [guest, setGuest] = useState<boolean>(false);
 
     useEffect(() => {
         const token = localStorage.getItem('token');
         setAuthenticated(!!token);
+
+        if (token == "none") {
+            setGuest(true);
+        }
 
         const storedUser = localStorage.getItem('user');
         if (storedUser) {
@@ -47,11 +54,11 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         setAuthenticated(false);
-        setUser(null);    
+        setUser(null);
     };
 
     return (
-        <AuthContext.Provider value={{ authenticated, user, login, logout, setUser, loading }}>
+        <AuthContext.Provider value={{ authenticated, user, login, logout, setUser, loading, guest, setGuest }}>
             {children}
         </AuthContext.Provider>
     );

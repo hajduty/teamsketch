@@ -37,8 +37,13 @@ namespace teamsketch_backend.Service
             {
                 RoomId = roomId,
                 OwnerId = ownerId,
-                Title = title,
+                Title = title
             };
+
+            if (ownerId == "public")
+            {
+                metadata.Public = true;
+            }
 
             await _context.RoomMetadata.InsertOneAsync(metadata);
         }
