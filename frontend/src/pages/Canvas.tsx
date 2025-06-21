@@ -10,10 +10,11 @@ import apiClient from "../lib/apiClient";
 import { apiRoutes } from "../lib/apiRoutes";
 import { Permissions } from "../types/permission";
 import { CanvasList } from "../features/canvas/components/CanvasList";
+import { UserInfo } from "../features/canvas/components/UserInfo";
 
 function App() {
   const { roomId } = useParams();
-  const { user } = useAuth();
+  const { user, guest } = useAuth();
   const navigate = useNavigate();
 
   const [permission, setPermission] = useState<Permissions>();
@@ -27,6 +28,8 @@ function App() {
 
   const fetchPermissions = async () => {
     if (!roomId || !user?.email) return;
+
+    if (guest) return;
 
     try {
       const response = await apiClient.get(apiRoutes.permission.getByRoom(roomId));
@@ -69,6 +72,7 @@ function App() {
         <Toolbar />
         <ToolOptions />
         <ShareCanvas roomId={roomId!} />
+        <UserInfo/>
       </>
       }
       <CanvasList />

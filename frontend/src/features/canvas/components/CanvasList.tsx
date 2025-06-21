@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import apiClient from "../../../lib/apiClient";
 import { apiRoutes } from "../../../lib/apiRoutes";
 import Icon from "../../../components/Icon";
+import { useAuth } from "../../auth/AuthProvider";
+import { useCanvasStore } from "../canvasStore";
 
 interface Permission {
   roomId: string;
@@ -12,8 +14,16 @@ interface Permission {
 export const CanvasList = () => {
   const [rooms, setRooms] = useState<Permission[]>([]);
   const [collapsed, setCollapsed] = useState(true);
+  const { guest } = useAuth();
+  const { guestRooms } = useCanvasStore();
 
   const fetchMyRooms = async () => {
+    if (guest) {
+      setRooms(guestRooms);
+      console.log(guestRooms);
+      return;
+    }
+
     try {
       const response = await apiClient.get(apiRoutes.permission.getMyRooms);
       setRooms(response.data);
@@ -24,7 +34,7 @@ export const CanvasList = () => {
 
   useEffect(() => {
     fetchMyRooms();
-  }, []);
+  }, [guestRooms]);
 
   const toggleCollapse = () => {
     setCollapsed(!collapsed);
@@ -45,22 +55,13 @@ export const CanvasList = () => {
           </div>
 
           {/* Collapsible content */}
-          {!collapsed && (
+          {(
             <>
-              {/* New Room Button */}
-              {rooms.length === 0 ? (<>
-                <button
-                  onClick={() => {
-                    const newRoomId = crypto.randomUUID();
-                    window.location.href = `/${newRoomId}`;
-                  }}
-                  className="w-full bg-blue-600 hover:bg-blue-500 transition duration-75 rounded px-3 py-1 text-sm font-medium"
-                >
-                  New room
-                </button>
-              </>
-              ) : (
-                <ul className="space-y-2 max-h-72 overflow-auto scrollbar-thin scrollbar-thumb-neutral-600">
+              <div
+                className={`overflow-hidden transition-all duration-150 ease-in-out ${collapsed ? "max-h-0 opacity-0" : "max-h-[500px] opacity-100"
+                  }`}>
+                {/* New Room Button */}
+                {rooms.length === 0 ? (<>
                   <button
                     onClick={() => {
                       const newRoomId = crypto.randomUUID();
@@ -70,36 +71,49 @@ export const CanvasList = () => {
                   >
                     New room
                   </button>
-                  {rooms.map((perm) => (
-                    <li
-                      key={perm.roomId}
-                      className="flex justify-between items-center border border-neutral-700 rounded p-2 hover:bg-neutral-800 transition"
+                </>
+                ) : (
+                  <ul className="space-y-2 max-h-72 overflow-auto scrollbar-thin scrollbar-thumb-neutral-600">
+                    <button
+                      onClick={() => {
+                        const newRoomId = crypto.randomUUID();
+                        window.location.href = `/${newRoomId}`;
+                      }}
+                      className="w-full bg-blue-600 hover:bg-blue-500 transition duration-75 rounded px-3 py-1 text-sm font-medium"
                     >
-                      <div className="flex flex-col min-w-0 flex-1 mr-2">
-                        <span className="font-medium text-sm break-all">
-                          Room ID:
-                        </span>
-                        <span className="font-medium text-sm break-all">
-                          {perm.roomId}
-                        </span>
-                        <span className="text-sm text-neutral-400">
-                          Role: {perm.role}
-                        </span>
-                      </div>
-                      <a
-                        href={`/${perm.roomId}`}
-                        className="text-blue-400 text-sm flex items-center gap-1 flex-shrink-0"
+                      New room
+                    </button>
+                    {rooms.map((perm) => (
+                      <li
+                        key={perm.roomId}
+                        className="flex justify-between items-center border border-neutral-700 rounded p-2 hover:bg-neutral-800 transition"
                       >
-                        <Icon iconName="arrow_forward" fontSize="20px" color="white" />
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              )}
+                        <div className="flex flex-col min-w-0 flex-1 mr-2">
+                          <span className="font-medium text-sm break-all">
+                            Room ID:
+                          </span>
+                          <span className="font-medium text-sm break-all">
+                            {perm.roomId}
+                          </span>
+                          <span className="text-sm text-neutral-400">
+                            Role: {perm.role}
+                          </span>
+                        </div>
+                        <a
+                          href={`/${perm.roomId}`}
+                          className="text-blue-400 text-sm flex items-center gap-1 flex-shrink-0"
+                        >
+                          <Icon iconName="arrow_forward" fontSize="20px" color="white" />
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </>
           )}
         </div>
       </div>
-    </div>
+    </div >
   );
 };

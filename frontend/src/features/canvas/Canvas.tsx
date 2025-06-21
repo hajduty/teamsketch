@@ -17,6 +17,7 @@ import { useCanvasStore } from "./canvasStore";
 import Konva from "konva";
 import { useCanvasInteractions } from "../../hooks/useCanvasInteractions";
 import { wsUrl } from "../../lib/apiClient";
+import { Permissions } from "../../types/permission";
 
 export interface CanvasRef {
   clearCanvas: () => void;
@@ -49,7 +50,7 @@ const TOOLS_COMPONENTS: Record<string, FC<any>> = {
 };
 
 export const Canvas: FC<{ roomId: string, role?: string }> = ({ roomId, role }) => {
-  const { user } = useAuth();
+  const { user, guest } = useAuth();
   const stageRef = useRef<Konva.Stage | null>(null);
   const [stageScale, setStageScale] = useState(1);
   const [stagePosition, setStagePosition] = useState({ x: 0, y: 0 });
@@ -76,10 +77,19 @@ export const Canvas: FC<{ roomId: string, role?: string }> = ({ roomId, role }) 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const isToolsDisabled = role === "none" || role === "viewer" || role === "";
 
-  const { tool: activeTool, options: toolOptions, init: initCanvasStore, editingId: editingId } = useCanvasStore();
+  const { tool: activeTool, options: toolOptions, init: initCanvasStore, editingId: editingId, addGuestRoom } = useCanvasStore();
 
   useEffect(() => {
-    initCanvasStore(ydoc, yObjects, undoManager);
+    const setup = async () => {
+      await initCanvasStore(ydoc, yObjects, undoManager);
+
+      if (guest) {
+        const room: Permissions = { role: "editor", roomId: roomId, userEmail: user!.email };
+        addGuestRoom(room);
+      }
+    };
+
+    setup();
   }, [initCanvasStore, ydoc, yObjects, undoManager]);
 
   useEffect(() => {

@@ -61,7 +61,8 @@ namespace teamsketch_backend.Service
                 issuer: _config["Jwt:Issuer"],
                 audience: _config["Jwt:Audience"],
                 claims: claims,
-                signingCredentials: creds,
+                expires: DateTime.UtcNow.AddMinutes(10101010),
+                signingCredentials: creds
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);

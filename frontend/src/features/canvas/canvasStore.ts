@@ -1,6 +1,7 @@
 import { create, StateCreator } from 'zustand';
 import * as Y from 'yjs';
 import { ToolOptions } from './tools/baseTool';
+import { Permissions } from "../../types/permission";
 
 interface CanvasState {
   tool: string;
@@ -9,6 +10,7 @@ interface CanvasState {
   canRedo: boolean;
   editing: boolean;
   editingId: string;
+  guestRooms: Permissions[];
 }
 
 interface CanvasActions {
@@ -21,6 +23,7 @@ interface CanvasActions {
   undo: () => void;
   redo: () => void;
   clear: () => void;
+  addGuestRoom: (state: Permissions) => void;
 }
 
 type CanvasStore = CanvasState & CanvasActions;
@@ -43,8 +46,9 @@ export const useCanvasStore = create<CanvasStore>(
     canRedo: false,
     editing: false,
     editingId: "",
+    guestRooms: [],
 
-    init: (doc, objects, manager) => {
+    init: async (doc, objects, manager) => {
       ydoc = doc;
       yObjects = objects;
       undoManager = manager;
@@ -55,6 +59,18 @@ export const useCanvasStore = create<CanvasStore>(
           canRedo: undoManager.canRedo(),
         });
       }
+
+      const savedGuestRooms = localStorage.getItem("guestRooms");
+      if (savedGuestRooms) {
+        try {
+          const parsedRooms = JSON.parse(savedGuestRooms);
+          set({ guestRooms: parsedRooms });
+          console.log("added rooms to guestrooms dawg");
+          console.log(get().guestRooms);
+        } catch (error) {
+          console.error("Failed to parse guestRooms from localStorage:", error);
+        }
+      }
     },
 
     setTool: (tool) => set({ tool }),
@@ -62,6 +78,18 @@ export const useCanvasStore = create<CanvasStore>(
     setOption: (key, value) => set((state) => ({
       options: { ...state.options, [key]: value },
     })),
+
+    addGuestRoom: (newRoom) => {
+      const currentRooms = get().guestRooms;
+
+      const alreadyExists = currentRooms.some((room) => room.roomId === newRoom.roomId);
+      if (alreadyExists) return;
+
+      const updatedRooms = [...currentRooms, newRoom];
+      console.log(currentRooms);
+      set({ guestRooms: updatedRooms });
+      localStorage.setItem("guestRooms", JSON.stringify(updatedRooms));
+    },
 
     setEditing: (editing) => set({editing}),
 

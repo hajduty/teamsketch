@@ -4,10 +4,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../features/auth/AuthProvider';
 import axios from 'axios';
 import { apiRoutes } from '../../lib/apiRoutes';
+import { User } from '../../types/user';
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
-  const { authenticated } = useAuth();
+  const { authenticated, login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
@@ -28,11 +29,26 @@ const Register: React.FC = () => {
     }
   };
 
+  const handleGuestLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      const email = crypto.randomUUID();
+      const id = crypto.randomUUID();
+
+      const user: User = { email: email, id: id };
+      login("none", user);
+    } catch(err) {
+      console.error('Login failed', err);
+      setError(true);
+    }
+  }
+
   return (
     <div className="flex h-screen md:flex-row flex-col">
       <div className="md:w-2/3 lg:w-1/3 flex bg-neutral-900 flex-col justify-center items-center z-10 border-r border-neutral-700 p-4">
         <form className="w-full max-w-sm" onSubmit={handleSubmit}>
-          <h1 className="text-3xl font-semibold text-white mb-10">Sign in</h1>
+          <h1 className="text-3xl font-semibold text-white mb-10">Sign up</h1>
 
           <div className="mb-4">
             <label className="block text-neutral-300 text-sm mb-2" htmlFor="email">
@@ -76,10 +92,25 @@ const Register: React.FC = () => {
           </div>
 
           <button
-            className="bg-blue-700 hover:bg-blue-500 text-white py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full"
+            className="bg-green-700 hover:bg-green-500 text-white py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full"
             type="submit"
           >
             Sign up
+          </button>
+
+
+          <div className="flex items-center justify-center my-4">
+            <div className="border-t border-neutral-700 w-1/3"></div>
+            <p className="text-gray-400 mx-2 text-sm">or</p>
+            <div className="border-t border-neutral-700 w-1/3"></div>
+          </div>
+
+          <button
+            className="bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full"
+            type="button"
+            onClick={handleGuestLogin}
+          >
+            Continue as guest
           </button>
         </form>
       </div>

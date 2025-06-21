@@ -16,13 +16,13 @@ namespace teamsketch_backend.Service
         private readonly IMongoCollection<RoomMetadata> _roomMetadata;
         private readonly IMongoCollection<User> _users;
 
-        //private readonly IMemoryCache _cache;
+        private readonly IMemoryCache _cache;
         private readonly TimeSpan _cacheDuration = TimeSpan.FromMinutes(5);
 
         public PermissionService(DbContext context, IMemoryCache cache)
         {
             _permissions = context.Permissions;
-            //_cache = cache;
+            _cache = cache;
             _roomMetadata = context.RoomMetadata;
             _users = context.Users;
         }
@@ -89,16 +89,24 @@ namespace teamsketch_backend.Service
             {
                 var cacheKey = GetCacheKey(userId, roomId);
 
-                //if (_cache.TryGetValue(cacheKey, out string cachedRole))
-                //{
-                //    return cachedRole;
-                //}
+                if (_cache.TryGetValue(cacheKey, out string cachedRole))
+                {
+                    return cachedRole;
+                }
 
                 var permission = await _permissions.Find(p => p.UserId == userId && p.RoomId == roomId).FirstOrDefaultAsync();
 
                 var role = permission?.Role ?? "none";
 
-                //_cache.Set(cacheKey, role, _cacheDuration);
+                var roomPublicStatus = await _roomMetadata.Find(p => p.RoomId == roomId).FirstOrDefaultAsync();
+
+                if (roomPublicStatus.Public == true)
+                {
+                    _cache.Set(cacheKey, "editor", _cacheDuration);
+                    return "editor";
+                }
+
+                _cache.Set(cacheKey, role, _cacheDuration);
 
                 return role;
             }
@@ -120,7 +128,7 @@ namespace teamsketch_backend.Service
                 }
 
                 var cacheKey = GetCacheKey(userId, roomId);
-                //_cache.Remove(cacheKey);
+                _cache.Remove(cacheKey);
 
                 var existingPermission = await GetPermissionAsync(userId, roomId);
                 if (existingPermission != "none")
@@ -139,7 +147,7 @@ namespace teamsketch_backend.Service
                 try
                 {
                     await _permissions.InsertOneAsync(newPermission);
-                    //_cache.Set(cacheKey, "owner", _cacheDuration);
+                    _cache.Set(cacheKey, "owner", _cacheDuration);
 
                     var verification = await _permissions.Find(p => p.UserId == userId && p.RoomId == roomId).FirstOrDefaultAsync();
 
@@ -148,7 +156,7 @@ namespace teamsketch_backend.Service
                 }
                 catch (MongoWriteException ex) when (ex.WriteError?.Category == ServerErrorCategory.DuplicateKey)
                 {
-                    //_cache.Set(cacheKey, "owner", _cacheDuration);
+                    _cache.Set(cacheKey, "owner", _cacheDuration);
                     return Result.Fail($"DEBUG: Duplicate key handled for owner permission");
                 }
                 catch (Exception ex)
@@ -196,14 +204,14 @@ namespace teamsketch_backend.Service
                 {
                     await _permissions.InsertOneAsync(newPermission);
                     var cacheKey = GetCacheKey(targetUserId, permission.RoomId);
-                    //_cache.Set(cacheKey, permission.Role, _cacheDuration);
+                    _cache.Set(cacheKey, permission.Role, _cacheDuration);
                     Console.WriteLine($"DEBUG: Successfully added permission - UserId: {targetUserId}, Role: {permission.Role}");
                     return Result.Ok();
                 }
                 catch (MongoWriteException ex) when (ex.WriteError?.Category == ServerErrorCategory.DuplicateKey)
                 {
                     var cacheKey = GetCacheKey(targetUserId, permission.RoomId);
-                    //_cache.Set(cacheKey, permission.Role, _cacheDuration);
+                    _cache.Set(cacheKey, permission.Role, _cacheDuration);
                     return Result.Fail($"DEBUG: Duplicate key handled for UserId: {targetUserId}");
                 }
             }
@@ -236,7 +244,7 @@ namespace teamsketch_backend.Service
                 await _permissions.UpdateOneAsync(filter, update);
 
                 var cacheKey = GetCacheKey(targetUserId, permission.RoomId);
-                //_cache.Set(cacheKey, permission.Role, _cacheDuration);
+                _cache.Set(cacheKey, permission.Role, _cacheDuration);
 
                 Console.WriteLine($"DEBUG: Edited permission for user {targetUserId}");
                 return Result.Ok();
@@ -267,7 +275,7 @@ namespace teamsketch_backend.Service
                 await _permissions.DeleteOneAsync(p => p.UserId == targetUserId && p.RoomId == permission.RoomId);
 
                 var cacheKey = GetCacheKey(targetUserId, permission.RoomId);
-                //_cache.Remove(cacheKey);
+                _cache.Remove(cacheKey);
 
                 Console.WriteLine($"DEBUG: Deleted permission for user {targetUserId}");
                 return Result.Ok();
@@ -292,7 +300,7 @@ namespace teamsketch_backend.Service
                 await _permissions.DeleteOneAsync(p => p.UserId == targetUserId && p.RoomId == roomId);
 
                 var cacheKey = GetCacheKey(targetUserId, roomId);
-                //_cache.Remove(cacheKey);
+                _cache.Remove(cacheKey);
 
                 Console.WriteLine($"DEBUG: Internally deleted permission for user {targetUserId}");
             }

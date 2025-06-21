@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../features/auth/AuthProvider';
 import axios from 'axios';
 import { apiRoutes } from '../../lib/apiRoutes';
+import { User } from '../../types/user';
 
 const SignIn: React.FC = () => {
   const navigate = useNavigate();
@@ -29,6 +30,21 @@ const SignIn: React.FC = () => {
       setError(true);
     }
   };
+
+  const handleGuestLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      const email = crypto.randomUUID();
+      const id = crypto.randomUUID();
+
+      const user: User = { email: email, id: id };
+      login("none", user);
+    } catch (err) {
+      console.error('Login failed', err);
+      setError(true);
+    }
+  }
 
   return (
     <div className="flex h-screen md:flex-row flex-col">
@@ -82,6 +98,20 @@ const SignIn: React.FC = () => {
             type="submit"
           >
             Sign in
+          </button>
+
+          <div className="flex items-center justify-center my-4">
+            <div className="border-t border-neutral-700 w-1/3"></div>
+            <p className="text-gray-400 mx-2 text-sm">or</p>
+            <div className="border-t border-neutral-700 w-1/3"></div>
+          </div>
+
+          <button
+            className="bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full"
+            type="button"
+            onClick={handleGuestLogin}
+          >
+            Continue as guest
           </button>
         </form>
       </div>
