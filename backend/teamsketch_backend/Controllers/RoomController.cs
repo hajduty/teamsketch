@@ -86,8 +86,20 @@ namespace teamsketch_backend.Controllers
                 }
                 else if (token == "none") {
                     var doc = await _documentStore.GetDocAsync(roomName);
-                    await _metadataService.CreateRoomAsync(roomName, "public");
-                    return new YDotNetActionResult(roomName);
+                    var room = await _metadataService.GetByRoomIdAsync(roomName);
+
+                    // new room
+                    if (doc == null)
+                    {
+                        await _metadataService.CreateRoomAsync(roomName, "public");
+                        return new YDotNetActionResult(roomName);
+                    }
+
+                    if (room.Public == true)
+                    {
+                        return new YDotNetActionResult(roomName);
+                    }
+                    return Unauthorized("You do not have permission to access this room.");
                 }
                 else
                 {

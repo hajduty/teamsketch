@@ -4,6 +4,8 @@ import { apiRoutes } from "../../../lib/apiRoutes";
 import Icon from "../../../components/Icon";
 import { useAuth } from "../../auth/AuthProvider";
 import { useCanvasStore } from "../canvasStore";
+import { useNavigate } from "react-router-dom";
+import { replace } from "lodash";
 
 interface Permission {
   roomId: string;
@@ -12,15 +14,16 @@ interface Permission {
 }
 
 export const CanvasList = () => {
-  const [rooms, setRooms] = useState<Permission[]>([]);
-  const [collapsed, setCollapsed] = useState(true);
+  const navigate = useNavigate();
   const { guest } = useAuth();
   const { guestRooms } = useCanvasStore();
+  
+  const [rooms, setRooms] = useState<Permission[]>([]);
+  const [collapsed, setCollapsed] = useState(true);
 
   const fetchMyRooms = async () => {
     if (guest) {
       setRooms(guestRooms);
-      console.log(guestRooms);
       return;
     }
 
@@ -65,7 +68,7 @@ export const CanvasList = () => {
                   <button
                     onClick={() => {
                       const newRoomId = crypto.randomUUID();
-                      window.location.href = `/${newRoomId}`;
+                      navigate(`/${newRoomId}`);
                     }}
                     className="w-full bg-blue-600 hover:bg-blue-500 transition duration-75 rounded px-3 py-1 text-sm font-medium"
                   >
@@ -77,7 +80,7 @@ export const CanvasList = () => {
                     <button
                       onClick={() => {
                         const newRoomId = crypto.randomUUID();
-                        window.location.href = `/${newRoomId}`;
+                        navigate(`/${newRoomId}`);
                       }}
                       className="w-full bg-blue-600 hover:bg-blue-500 transition duration-75 rounded px-3 py-1 text-sm font-medium"
                     >
@@ -99,12 +102,12 @@ export const CanvasList = () => {
                             Role: {perm.role}
                           </span>
                         </div>
-                        <a
-                          href={`/${perm.roomId}`}
-                          className="text-blue-400 text-sm flex items-center gap-1 flex-shrink-0"
+                        <button
+                          onClick={() => navigate(`/${perm.roomId}`)}
+                          className="text-blue-400 text-sm flex items-center gap-1 flex-shrink-0 cursor-pointer"
                         >
                           <Icon iconName="arrow_forward" fontSize="20px" color="white" />
-                        </a>
+                        </button>
                       </li>
                     ))}
                   </ul>

@@ -49,7 +49,7 @@ const TOOLS_COMPONENTS: Record<string, FC<any>> = {
   text: TextRender,
 };
 
-export const Canvas: FC<{ roomId: string, role?: string }> = ({ roomId, role }) => {
+export const CanvasBoard: FC<{ roomId: string, role?: string }> = ({ roomId, role }) => {
   const { user, guest } = useAuth();
   const stageRef = useRef<Konva.Stage | null>(null);
   const [stageScale, setStageScale] = useState(1);

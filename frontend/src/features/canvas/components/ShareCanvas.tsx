@@ -163,7 +163,7 @@ export const ShareCanvas = ({ roomId }: { roomId: any }) => {
       <div className="fixed top-0 right-16 m-6 z-10">
         <button
           onClick={openModal}
-          className="p-2 bg-blue-600 border border-neutral-700 rounded-md flex hover:bg-blue-500 transition duration-75"
+          className="p-2 bg-blue-600 border border-blue-500 rounded-md flex hover:bg-blue-500 transition duration-75"
         >
           <Icon iconName="share" color="white" />
         </button>
