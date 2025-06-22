@@ -65,8 +65,6 @@ export const useCanvasStore = create<CanvasStore>(
         try {
           const parsedRooms = JSON.parse(savedGuestRooms);
           set({ guestRooms: parsedRooms });
-          console.log("added rooms to guestrooms dawg");
-          console.log(get().guestRooms);
         } catch (error) {
           console.error("Failed to parse guestRooms from localStorage:", error);
         }
@@ -86,7 +84,6 @@ export const useCanvasStore = create<CanvasStore>(
       if (alreadyExists) return;
 
       const updatedRooms = [...currentRooms, newRoom];
-      console.log(currentRooms);
       set({ guestRooms: updatedRooms });
       localStorage.setItem("guestRooms", JSON.stringify(updatedRooms));
     },

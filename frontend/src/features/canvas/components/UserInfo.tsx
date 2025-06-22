@@ -20,10 +20,10 @@ export const UserInfo = () => {
 
   return (
     <>
-      <div className="fixed top-0 right-0 m-6 z-10">
+      <div className="fixed top-0 right-0 m-6">
         <button
           onClick={openModal}
-          className="p-2 bg-neutral-700 border border-neutral-600 rounded-md flex hover:bg-neutral-600 transition duration-75"
+          className="p-2 bg-blue-600 border border-blue-500 rounded-md flex hover:bg-blue-500 transition duration-75"
         >
           <Icon iconName="account_circle" color="white" />
         </button>

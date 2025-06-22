@@ -1,14 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import bg from '../../assets/bg.png';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../features/auth/AuthProvider';
 import axios from 'axios';
 import { apiRoutes } from '../../lib/apiRoutes';
 import { User } from '../../types/user';
+import { replace } from 'lodash';
 
 const SignIn: React.FC = () => {
   const navigate = useNavigate();
-  const { authenticated, login } = useAuth();
+  const location = useLocation();
+  const { authenticated, login, setGuest } = useAuth();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
@@ -23,10 +26,17 @@ const SignIn: React.FC = () => {
     try {
       const response = await axios.post(apiRoutes.auth.login, { email, password });
       login(response.data.token, response.data.user);
-      const newRoomId = crypto.randomUUID();
-      navigate(`/${newRoomId}`, { replace: true });
+
+      const from = location.state?.from?.pathname;
+      console.log(from);
+      if (from) {
+        navigate(from);
+      } else {
+        const newRoomId = crypto.randomUUID();
+        navigate(`/${newRoomId}`, { replace: true });
+      }
     } catch (err) {
-      console.error('Login failed', err);
+      console.error("Login failed", err);
       setError(true);
     }
   };
@@ -38,13 +48,24 @@ const SignIn: React.FC = () => {
       const email = crypto.randomUUID();
       const id = crypto.randomUUID();
 
-      const user: User = { email: email, id: id };
-      login("none", user);
+      const user: User = { email, id };
+      setGuest(true);
+      
+      await login("none", user);
+
+      const from = location.state?.from?.pathname;
+      console.log(from);
+      if (from) {
+        navigate(from, {replace: true});
+      } else {
+        const newRoomId = crypto.randomUUID();
+        navigate(`/${newRoomId}`, { replace: true });
+      }
     } catch (err) {
-      console.error('Login failed', err);
+      console.error("Guest login failed", err);
       setError(true);
     }
-  }
+  };
 
   return (
     <div className="flex h-screen md:flex-row flex-col">

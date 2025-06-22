@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { Canvas } from "../features/canvas/Canvas";
+import { useLocation, useMatch, useNavigate, useParams } from "react-router-dom";
+import { CanvasBoard } from "../features/canvas/Canvas";
 import { Toolbar } from "../features/canvas/components/Toolbar";
 import { ToolOptions } from "../features/canvas/components/ToolOptions";
 import { HistoryButtons } from "../features/canvas/components/HistoryButtons";
@@ -12,19 +12,28 @@ import { Permissions } from "../types/permission";
 import { CanvasList } from "../features/canvas/components/CanvasList";
 import { UserInfo } from "../features/canvas/components/UserInfo";
 
-function App() {
+export const CanvasWrapper = () => {
   const { roomId } = useParams();
-  const { user, guest } = useAuth();
   const navigate = useNavigate();
-
-  const [permission, setPermission] = useState<Permissions>();
 
   useEffect(() => {
     if (!roomId) {
-      const newRoomId = crypto.randomUUID();
-      navigate(`/${newRoomId}`, { replace: true });
+      if (location.pathname === "/") {
+        const newRoomId = crypto.randomUUID();
+        navigate(`/${newRoomId}`, { replace: true });
+      }
     }
-  }, [roomId, navigate]);
+  }, [roomId, location.pathname, navigate]);
+
+  if (!roomId) return <></>
+
+  return <CanvasPage roomId={roomId} />;
+}
+
+function CanvasPage({ roomId }: { roomId: string }) {
+  const { user, guest } = useAuth();
+
+  const [permission, setPermission] = useState<Permissions>();
 
   const fetchPermissions = async () => {
     if (!roomId || !user?.email) return;
@@ -65,14 +74,14 @@ function App() {
   return (
     <>
       <div className="flex flex-row h-screen justify-center items-center bg-neutral-800 relative">
-        <Canvas roomId={roomId!} role={permission?.role} />
+        <CanvasBoard roomId={roomId!} role={permission?.role} key={roomId} />
       </div>
       {permission?.role != "viewer" && <>
         <HistoryButtons />
         <Toolbar />
         <ToolOptions />
         <ShareCanvas roomId={roomId!} />
-        <UserInfo/>
+        <UserInfo />
       </>
       }
       <CanvasList />
@@ -80,4 +89,4 @@ function App() {
   );
 }
 
-export default App;
+export default CanvasPage;

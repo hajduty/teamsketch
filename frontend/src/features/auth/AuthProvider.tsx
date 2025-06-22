@@ -53,6 +53,7 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
     const logout = () => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        setGuest(false);
         setAuthenticated(false);
         setUser(null);
     };
