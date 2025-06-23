@@ -6,9 +6,9 @@ interface GridProps {
   stageRef: any;
 }
 
-const BASE_WIDTH = 100;
-const BASE_HEIGHT = 100;
-const CELL_LIMIT = 1000;
+const BASE_WIDTH = 200;
+const BASE_HEIGHT = 200;
+const CELL_LIMIT = 500;
 
 const grid = [["#111111", "#111111"], ["#111111", "#111111"]];
 

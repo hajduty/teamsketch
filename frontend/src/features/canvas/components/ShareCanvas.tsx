@@ -28,7 +28,7 @@ const GuestView = ({ roomId, onClose, isVisible }: {
       onClick={onClose}
     >
       <div
-        className={`bg-neutral-950 text-white rounded-md p-5 w-auto border border-neutral-700 flex flex-col gap-4 shadow-lg
+        className={`bg-neutral-950 text-white rounded-md p-5 sm:w-auto w-5/6 border border-neutral-700 flex flex-col gap-4 shadow-lg
           transform transition-all duration-200 ease-in-out
           ${isVisible ? "opacity-100 scale-100" : "opacity-0 scale-95"}
         `}
@@ -185,7 +185,7 @@ export const ShareCanvas = ({ roomId }: { roomId: any }) => {
             onClick={closeModal}
           >
             <div
-              className={`bg-neutral-950 text-white rounded-md p-5 w-auto max-h-[85vh] overflow-y-auto border border-neutral-700 flex flex-col gap-4 shadow-lg
+              className={`bg-neutral-950 text-white rounded-md p-5 sm:w-auto w-5/6 max-h-[85vh] overflow-y-auto border border-neutral-700 flex flex-col gap-4 shadow-lg
               transform transition-all duration-200 ease-in-out
               ${isVisible ? "opacity-100 scale-100" : "opacity-0 scale-95"}
               `}

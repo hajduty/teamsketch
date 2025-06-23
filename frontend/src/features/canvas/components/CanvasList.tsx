@@ -6,6 +6,7 @@ import { useAuth } from "../../auth/AuthProvider";
 import { useCanvasStore } from "../canvasStore";
 import { useNavigate } from "react-router-dom";
 import { replace } from "lodash";
+import { getUUID } from "../../../utils/utils";
 
 interface Permission {
   roomId: string;
@@ -44,9 +45,9 @@ export const CanvasList = () => {
   };
 
   return (
-    <div className="fixed top-0 left-0 group hover:z-3 z-2 m-4">
+    <div className="fixed top-0 left-0 group hover:z-3 z-2 m-4 ">
       <div className="w-64 border border-neutral-700 bg-neutral-950 rounded-md overflow-hidden hover:overflow-y-auto scrollbar-thin scrollbar-thumb-neutral-600">
-        <div className="64-52 bg-neutral-950 p-3 text-white space-y-2">
+        <div className=" bg-neutral-950 p-3 text-white space-y-2">
 
           {/* Collapsible Header */}
           <div
@@ -67,7 +68,7 @@ export const CanvasList = () => {
                 {rooms.length === 0 ? (<>
                   <button
                     onClick={() => {
-                      const newRoomId = crypto.randomUUID();
+                      const newRoomId = getUUID();
                       navigate(`/${newRoomId}`);
                     }}
                     className="w-full bg-blue-600 hover:bg-blue-500 transition duration-75 rounded px-3 py-1 text-sm font-medium"
@@ -79,7 +80,7 @@ export const CanvasList = () => {
                   <ul className="space-y-2 max-h-72 overflow-auto scrollbar-thin scrollbar-thumb-neutral-600">
                     <button
                       onClick={() => {
-                        const newRoomId = crypto.randomUUID();
+                        const newRoomId = getUUID();
                         navigate(`/${newRoomId}`);
                       }}
                       className="w-full bg-blue-600 hover:bg-blue-500 transition duration-75 rounded px-3 py-1 text-sm font-medium"

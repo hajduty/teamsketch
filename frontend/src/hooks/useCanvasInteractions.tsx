@@ -11,7 +11,7 @@ interface UseCanvasInteractionsProps {
   handleMouseMove?: (e: any) => void;
   stageScale: number;
   setStageScale: (scale: number) => void;
-  setStagePosition: (pos: { x: number; y: number }) => void;
+  setStagePosition: React.Dispatch<React.SetStateAction<{ x: number; y: number }>>;
   setIsSpacePressed: (pressed: boolean) => void;
 }
 
@@ -121,6 +121,77 @@ export function useCanvasInteractions({
       window.removeEventListener("keyup", handleKeyUp);
     };
   }, [handleKeyDown, handleKeyUp]);
+
+  // Mobile handlers
+  useEffect(() => {
+    const stage = stageRef.current?.getStage();
+    if (!stage) return;
+
+    const content = stage.content;
+
+    let lastDist = 0;
+    let lastCenter = { x: 0, y: 0 };
+
+    const getDistance = (p1: Touch, p2: Touch) => {
+      return Math.hypot(p1.clientX - p2.clientX, p1.clientY - p2.clientY);
+    };
+
+    const getCenter = (p1: Touch, p2: Touch) => {
+      return {
+        x: (p1.clientX + p2.clientX) / 2,
+        y: (p1.clientY + p2.clientY) / 2,
+      };
+    };
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length >= 2) {
+        setIsSpacePressed(true); // prevent drawing
+        lastDist = getDistance(e.touches[0], e.touches[1]);
+        lastCenter = getCenter(e.touches[0], e.touches[1]);
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        const [touch1, touch2] = e.touches;
+        const center = getCenter(touch1, touch2);
+
+        const dx = center.x - lastCenter.x;
+        const dy = center.y - lastCenter.y;
+
+        setStagePosition(pos => ({
+          x: pos.x + dx,
+          y: pos.y + dy,
+        }));
+
+        lastCenter = center;
+
+        //const dist = getDistance(touch1, touch2);
+        //const scaleBy = dist / lastDist;
+        //setStageScale(Math.max(0.1, Math.min(stageScale * scaleBy, 5)));
+        //lastDist = dist;
+      }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length < 2) {
+        setIsSpacePressed(false);
+      }
+    };
+
+    content.addEventListener("touchstart", handleTouchStart, { passive: false });
+    content.addEventListener("touchmove", handleTouchMove, { passive: false });
+    content.addEventListener("touchend", handleTouchEnd);
+    content.addEventListener("touchcancel", handleTouchEnd);
+
+    return () => {
+      content.removeEventListener("touchstart", handleTouchStart);
+      content.removeEventListener("touchmove", handleTouchMove);
+      content.removeEventListener("touchend", handleTouchEnd);
+      content.removeEventListener("touchcancel", handleTouchEnd);
+    };
+  }, [stageRef, setIsSpacePressed, setStagePosition, setStageScale]);
 
   return {
     wrappedHandleMouseMove,
