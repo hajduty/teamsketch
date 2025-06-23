@@ -5,7 +5,7 @@ import { useAuth } from '../../features/auth/AuthProvider';
 import axios from 'axios';
 import { apiRoutes } from '../../lib/apiRoutes';
 import { User } from '../../types/user';
-import { replace } from 'lodash';
+import { getUUID } from '../../utils/utils';
 
 const SignIn: React.FC = () => {
   const navigate = useNavigate();
@@ -32,7 +32,7 @@ const SignIn: React.FC = () => {
       if (from) {
         navigate(from);
       } else {
-        const newRoomId = crypto.randomUUID();
+        const newRoomId = getUUID();
         navigate(`/${newRoomId}`, { replace: true });
       }
     } catch (err) {
@@ -45,8 +45,8 @@ const SignIn: React.FC = () => {
     e.preventDefault();
 
     try {
-      const email = crypto.randomUUID();
-      const id = crypto.randomUUID();
+      const email = getUUID();
+      const id = getUUID();
 
       const user: User = { email, id };
       setGuest(true);
@@ -58,7 +58,7 @@ const SignIn: React.FC = () => {
       if (from) {
         navigate(from, {replace: true});
       } else {
-        const newRoomId = crypto.randomUUID();
+        const newRoomId = getUUID();
         navigate(`/${newRoomId}`, { replace: true });
       }
     } catch (err) {

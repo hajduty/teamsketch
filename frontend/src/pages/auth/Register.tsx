@@ -5,6 +5,7 @@ import { useAuth } from '../../features/auth/AuthProvider';
 import axios from 'axios';
 import { apiRoutes } from '../../lib/apiRoutes';
 import { User } from '../../types/user';
+import { getUUID } from '../../utils/utils';
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
@@ -33,8 +34,8 @@ const Register: React.FC = () => {
     e.preventDefault();
 
     try {
-      const email = crypto.randomUUID();
-      const id = crypto.randomUUID();
+      const email = getUUID();
+      const id = getUUID();
 
       const user: User = { email: email, id: id };
       login("none", user);

@@ -11,6 +11,7 @@ import { apiRoutes } from "../lib/apiRoutes";
 import { Permissions } from "../types/permission";
 import { CanvasList } from "../features/canvas/components/CanvasList";
 import { UserInfo } from "../features/canvas/components/UserInfo";
+import { getUUID } from "../utils/utils";
 
 export const CanvasWrapper = () => {
   const { roomId } = useParams();
@@ -19,7 +20,7 @@ export const CanvasWrapper = () => {
   useEffect(() => {
     if (!roomId) {
       if (location.pathname === "/") {
-        const newRoomId = crypto.randomUUID();
+        const newRoomId = getUUID();
         navigate(`/${newRoomId}`, { replace: true });
       }
     }
@@ -73,7 +74,7 @@ function CanvasPage({ roomId }: { roomId: string }) {
 
   return (
     <>
-      <div className="flex flex-row h-screen justify-center items-center bg-neutral-800 relative">
+      <div className="flex flex-row h-screen justify-center items-center bg-neutral-800 relative touch-none">
         <CanvasBoard roomId={roomId!} role={permission?.role} key={roomId} />
       </div>
       {permission?.role != "viewer" && <>

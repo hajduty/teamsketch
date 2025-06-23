@@ -202,7 +202,7 @@ export const CanvasBoard: FC<{ roomId: string, role?: string }> = ({ roomId, rol
 
   return (
     <>
-      <Stage
+      <Stage className="m-0 p-0"
         ref={stageRef}
         width={width!}
         height={height!}
@@ -211,6 +211,9 @@ export const CanvasBoard: FC<{ roomId: string, role?: string }> = ({ roomId, rol
         position={stagePosition}
         onWheel={handleWheelZoom}
         onDragEnd={handleStageDragEnd}
+        onTouchStart={!isSpacePressed && !isToolsDisabled ? handleMouseDown : undefined}
+        onTouchMove={!isSpacePressed ? wrappedHandleMouseMove : undefined}
+        onTouchEnd={!isSpacePressed && !isToolsDisabled ? handleMouseUp : undefined}
         onMouseDown={!isSpacePressed && !isToolsDisabled ? handleMouseDown : undefined}
         onMouseMove={!isSpacePressed ? wrappedHandleMouseMove : undefined}
         onMouseUp={!isSpacePressed && !isToolsDisabled ? handleMouseUp : undefined}
