@@ -5,7 +5,6 @@ import Icon from "../../../components/Icon";
 import { useAuth } from "../../auth/AuthProvider";
 import { useCanvasStore } from "../canvasStore";
 import { useNavigate } from "react-router-dom";
-import { replace } from "lodash";
 import { getUUID } from "../../../utils/utils";
 
 interface Permission {
