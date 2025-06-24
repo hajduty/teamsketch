@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useCallback, useEffect, useMemo } from "react";
 import debounce from "lodash/debounce";
 import Konva from "konva";

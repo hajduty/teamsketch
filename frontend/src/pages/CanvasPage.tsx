@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useLocation, useMatch, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { CanvasBoard } from "../features/canvas/Canvas";
 import { Toolbar } from "../features/canvas/components/Toolbar";
 import { ToolOptions } from "../features/canvas/components/ToolOptions";
@@ -16,7 +16,7 @@ import { getUUID } from "../utils/utils";
 export const CanvasWrapper = () => {
   const { roomId } = useParams();
   const navigate = useNavigate();
-
+  
   useEffect(() => {
     if (!roomId) {
       if (location.pathname === "/") {
